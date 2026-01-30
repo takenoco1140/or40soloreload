@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>OR40 Side View</title>
+
+<style>
+  :root{
+    --plateH: 150px;        /* ネーム帯高さ */
+    --plateScale: 0.3;     /* ネーム画像スケール */
+    --plateRaise: 50px;     /* ★ネーム画像を上に上げる量（ここを調整） */
+  }
+
+  html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    background:#000;
+    overflow:hidden;
+    font-family:sans-serif;
+  }
+
+  /* 画面を「上=ゲーム」「下=ネーム帯」で分割 */
+  #frame{
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    background:#000;
+  }
+
+  /* ===== ゲーム領域：残り全部 ===== */
+  #gameArea{
+    position:relative;
+    flex: 1 1 auto;
+    background:#000;
+    overflow:hidden;
+  }
+
+  /* 16:9の箱（サイズはJSで cover 計算） */
+  #game16x9{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    background:#000;
+    overflow:hidden;
+  }
+
+  #game{
+    width:100%;
+    height:100%;
+    border:none;
+    display:block;
+  }
+
+  /* ===== ネーム帯（下固定） ===== */
+  #nameplate{
+    height: var(--plateH);
+    background:#000;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    pointer-events:none;
+    position:relative;
+    z-index:10;
+    overflow: visible; /* ★上に持ち上げても切れないように */
+  }
+
+  #nameplate img{
+    display:block;
+    width:auto;
+    height:auto;
+    transform: translateY(calc(-1 * var(--plateRaise))) scale(var(--plateScale));
+    transform-origin: bottom center;
+  }
+
+  /* ===== 操作パネル：Pキーで表示/非表示・初期非表示 ===== */
+  #controls{
+    position:fixed;
+    right:-9999px;
+    top:10px;
+    z-index:20;
+    background:rgba(0,0,0,0.75);
+    padding:8px;
+    border-radius:8px;
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:4px;
+    min-width:260px;
+  }
+
+  #sideLabel{
+    grid-column:1 / -1;
+    text-align:center;
+    font-weight:800;
+    font-size:14px;
+    padding:6px 0;
+    border-radius:6px;
+    color:#fff;
+    letter-spacing:1px;
+    user-select:none;
+  }
+
+  #controls button{
+    font-size:12px;
+    padding:6px 0;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+</style>
+</head>
+
+<body>
+<div id="frame">
+
+  <!-- ゲーム領域 -->
+  <div id="gameArea">
+    <div id="game16x9">
+      <iframe
+        id="game"
+        allow="autoplay; fullscreen; camera; microphone"
+        allowfullscreen
+        scrolling="no"></iframe>
+    </div>
+  </div>
+
+  <!-- ネームプレート帯 -->
+  <div id="nameplate">
+    <img id="nameImg" src="" alt="">
+  </div>
+
+  <!-- 操作パネル -->
+  <div id="controls">
+    <div id="sideLabel">LEFT</div>
+  </div>
+
+</div>
+
+<script>
+  const MAX_PLAYERS = 40;
+
+  function pad(n){ return String(n).padStart(3,"0"); }
+
+  function viewUrl(n){
+    return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
+  }
+
+  function plateUrl(n){
+    return `overlays/P${pad(n)}.png`;
+  }
+
+  // side判定（色分け）
+  const side = (new URLSearchParams(location.search).get("side") || "left").toLowerCase();
+  const sideLabel = document.getElementById("sideLabel");
+  if(side === "right"){
+    sideLabel.textContent = "RIGHT";
+    sideLabel.style.background = "rgba(198,40,40,0.95)";
+  }else{
+    sideLabel.textContent = "LEFT";
+    sideLabel.style.background = "rgba(21,101,192,0.95)";
+  }
+
+  // 16:9 cover を gameArea基準で計算
+  function fitGame16x9Cover(){
+    const area = document.getElementById("gameArea");
+    const box  = document.getElementById("game16x9");
+
+    const W = area.clientWidth;
+    const H = area.clientHeight;
+
+    const target = 16/9;
+    const ar = W / H;
+
+    let bw, bh;
+    if(ar >= target){
+      bh = H;
+      bw = Math.ceil(H * target);
+    }else{
+      bw = W;
+      bh = Math.ceil(W / target);
+    }
+
+    box.style.width  = bw + "px";
+    box.style.height = bh + "px";
+  }
+
+  window.addEventListener("resize", fitGame16x9Cover);
+
+  function setPlayer(n){
+    document.getElementById("game").src = viewUrl(n);
+    const img = document.getElementById("nameImg");
+    img.src = plateUrl(n);
+    img.alt = `P${pad(n)}`;
+  }
+
+  // ボタン生成
+  const controls = document.getElementById("controls");
+  for(let i=1;i<=MAX_PLAYERS;i++){
+    const b = document.createElement("button");
+    b.textContent = `P${pad(i)}`;
+    b.onclick = ()=>setPlayer(i);
+    controls.appendChild(b);
+  }
+
+  // Pキーで表示/非表示（初期非表示）
+  let controlsVisible = false;
+  function setControlsVisible(v){
+    controlsVisible = v;
+    controls.style.right = controlsVisible ? "10px" : "-9999px";
+  }
+  setControlsVisible(false);
+
+  document.addEventListener("keydown",(e)=>{
+    if(e.key.toLowerCase()==="p") setControlsVisible(!controlsVisible);
+  });
+
+  // 初期化
+  fitGame16x9Cover();
+  setPlayer(1);
+</script>
+</body>
+</html>
+
+
+
