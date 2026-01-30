@@ -59,18 +59,32 @@
     transform-origin: bottom center;
   }
 
-  /* ===== 操作ボタン（運営用：Pキーで表示） ===== */
+  /* ===== 操作ボタン（右上） ===== */
   #controls {
     position: fixed;
-    right: -9999px; /* ★初期は画面外（右） */
+    right: 10px;      /* ★常時表示にするならここ固定でOK */
     top: 10px;
     z-index: 20;
     background: rgba(0,0,0,0.75);
     padding: 8px;
     border-radius: 8px;
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* ★5列 */
+    grid-template-columns: repeat(5, 1fr); /* 5列 */
     gap: 4px;
+    min-width: 260px;
+  }
+
+  /* LEFT/RIGHTラベル */
+  #sideLabel {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-weight: 800;
+    font-size: 14px;
+    padding: 6px 0;
+    border-radius: 6px;
+    color: #fff;
+    letter-spacing: 1px;
+    user-select: none;
   }
 
   #controls button {
@@ -98,7 +112,9 @@
   </div>
 
   <!-- 操作パネル -->
-  <div id="controls"></div>
+  <div id="controls">
+    <div id="sideLabel">LEFT</div>
+  </div>
 
 </div>
 
@@ -119,6 +135,18 @@
     return `overlays/P${pad(n)}.png`;
   }
 
+  /* ===== URLから side を判定 ===== */
+  const side = (new URLSearchParams(location.search).get("side") || "left").toLowerCase();
+  const sideLabel = document.getElementById("sideLabel");
+
+  if (side === "right") {
+    sideLabel.textContent = "RIGHT";
+    sideLabel.style.background = "rgba(198,40,40,0.95)";  // 赤系
+  } else {
+    sideLabel.textContent = "LEFT";
+    sideLabel.style.background = "rgba(21,101,192,0.95)"; // 青系
+  }
+
   function setPlayer(n){
     document.getElementById("game").src = viewUrl(n);
     const img = document.getElementById("nameImg");
@@ -135,8 +163,15 @@
     controls.appendChild(b);
   }
 
-  /* ===== Pキーで表示/非表示（右側） ===== */
-  let controlsVisible = true; // 初回は表示
+  /* ===== Pキーで表示/非表示（必要なら有効化） =====
+     いま「この位置なら常時表示でも良い」って話なので、
+     まず常時表示にしてある（CSS right:10px 固定）。
+     Pキーで隠したいなら、下のブロックをONにして、
+     CSSの #controls の right:10px を right:-9999px に戻して。
+  */
+
+  /*
+  let controlsVisible = true;
   function setControlsVisible(v){
     controlsVisible = v;
     controls.style.right = controlsVisible ? "10px" : "-9999px";
@@ -148,15 +183,10 @@
       setControlsVisible(!controlsVisible);
     }
   });
+  */
 
   /* 初期表示 */
   setPlayer(1);
 </script>
 </body>
 </html>
-
-
-
-
-
-
