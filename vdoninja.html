@@ -7,7 +7,7 @@
 <style>
   :root {
     --plateH: 160px;  /* ネームプレート帯の高さ */
-    --gapH: 10px;     /* ★ゲームとネームプレートの隙間 */
+    --gapH: 20px;     /* ゲームとネームプレートの隙間 */
   }
 
   html, body {
@@ -26,9 +26,7 @@
     height: 100%;
   }
 
-  /* =========================
-     ゲーム映像（下を空ける）
-     ========================= */
+  /* ===== ゲーム映像（下を空ける） ===== */
   #game {
     position: absolute;
     top: 0;
@@ -38,16 +36,14 @@
     border: none;
   }
 
-  /* =========================
-     ネームプレート帯
-     ========================= */
+  /* ===== ネームプレート帯 ===== */
   #nameplate {
     position: absolute;
     left: 0;
     bottom: 0;
     width: 100%;
     height: var(--plateH);
-    padding-top: var(--gapH);   /* ★ここで間を空ける */
+    padding-top: var(--gapH);
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -56,31 +52,32 @@
   }
 
   #nameplate img {
-    width: auto;
+    width: 90%;
     height: auto;
     display: block;
-    transform: scale(0.3);
+    transform: scale(0.5);
     transform-origin: bottom center;
   }
 
-  /* 操作パネル（画面外） */
+  /* ===== 操作ボタン（運営用：Pキーで表示） ===== */
   #controls {
     position: fixed;
-    left: -9999px;
+    right: -9999px; /* ★初期は画面外（右） */
     top: 10px;
     z-index: 20;
     background: rgba(0,0,0,0.75);
     padding: 8px;
     border-radius: 8px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr); /* ★5列 */
     gap: 4px;
   }
 
   #controls button {
-    font-size: 13px;
+    font-size: 12px;
     padding: 6px 0;
     cursor: pointer;
+    white-space: nowrap;
   }
 </style>
 </head>
@@ -100,7 +97,9 @@
     <img id="nameImg" src="" alt="">
   </div>
 
+  <!-- 操作パネル -->
   <div id="controls"></div>
+
 </div>
 
 <script>
@@ -110,10 +109,12 @@
     return String(n).padStart(3, "0");
   }
 
+  /* VDO Ninja 映像（IDはCのまま） */
   function viewUrl(n){
     return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
   }
 
+  /* ネームプレート画像（Pで統一） */
   function plateUrl(n){
     return `overlays/P${pad(n)}.png`;
   }
@@ -125,7 +126,7 @@
     img.alt = `P${pad(n)}`;
   }
 
-  /* ボタン生成 */
+  /* ===== ボタン生成：5列×4行（40人） ===== */
   const controls = document.getElementById("controls");
   for(let i=1;i<=MAX_PLAYERS;i++){
     const b = document.createElement("button");
@@ -134,12 +135,22 @@
     controls.appendChild(b);
   }
 
+  /* ===== Pキーで表示/非表示（右側） ===== */
+  let controlsVisible = true; // 初回は表示
+  function setControlsVisible(v){
+    controlsVisible = v;
+    controls.style.right = controlsVisible ? "10px" : "-9999px";
+  }
+  setControlsVisible(true);
+
+  document.addEventListener("keydown", (e)=>{
+    if(e.key.toLowerCase()==="p"){
+      setControlsVisible(!controlsVisible);
+    }
+  });
+
+  /* 初期表示 */
   setPlayer(1);
 </script>
 </body>
 </html>
-
-
-
-
-
