@@ -8,18 +8,17 @@
   html, body {
     margin: 0;
     padding: 0;
-    background: black;
     width: 100%;
     height: 100%;
+    background: black;
     overflow: hidden;
-    font-family: "Noto Sans JP", sans-serif;
+    font-family: sans-serif;
   }
 
   #frame {
     position: relative;
     width: 100%;
     height: 100%;
-    background: black;
   }
 
   /* ゲーム映像 */
@@ -31,28 +30,27 @@
     border: none;
   }
 
-  /* ネームプレート（画像） */
+  /* ネームプレート枠 */
   #nameplate {
     position: absolute;
     left: 50%;
-    transform: translateX(-50%);
     bottom: 0;
-
-    /* ★ここがサイズ調整ポイント（後で詰める） */
+    transform: translateX(-50%);
     width: 90%;
-    /* max-width: 1600px; */  /* 必要ならON */
-    /* bottom: 10px; */       /* 上げたいなら */
     pointer-events: none;
     z-index: 5;
   }
 
+  /* ネームプレート画像 */
   #nameplate img {
     width: 100%;
     height: auto;
     display: block;
+    transform: scale(0.5);
+    transform-origin: bottom center;
   }
 
-  /* 操作パネル（通常は画面外） */
+  /* 操作ボタン（画面外） */
   #controls {
     position: fixed;
     left: -9999px;
@@ -62,7 +60,7 @@
     padding: 8px;
     border-radius: 8px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3列 */
+    grid-template-columns: repeat(3, 1fr);
     gap: 4px;
   }
 
@@ -76,6 +74,7 @@
 
 <body>
 <div id="frame">
+
   <iframe
     id="game"
     allow="autoplay; fullscreen; camera; microphone"
@@ -87,20 +86,22 @@
   </div>
 
   <div id="controls"></div>
+
 </div>
 
 <script>
   const MAX_PLAYERS = 40;
 
-  function pad(n){ return String(n).padStart(3, "0"); }
+  function pad(n){
+    return String(n).padStart(3, "0");
+  }
 
-  // VDO側の部屋名は今まで通り C001.. のまま（映像IDはC）
+  // VDO Ninja 映像（IDはCのまま）
   function viewUrl(n){
     return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
   }
 
-  // ネームプレート画像は P001.png .. P040.png（表示IDはP）
-  // ※今P001しか無いなら、P002以降は404になる（表示されない）＝正常
+  // ネームプレート画像（Pで統一）
   function plateUrl(n){
     return `overlays/P${pad(n)}.png`;
   }
@@ -112,7 +113,7 @@
     img.alt = `P${pad(n)}`;
   }
 
-  // ボタン生成（P表記）
+  /* ボタン生成 */
   const controls = document.getElementById("controls");
   for(let i=1;i<=MAX_PLAYERS;i++){
     const b = document.createElement("button");
@@ -121,7 +122,7 @@
     controls.appendChild(b);
   }
 
-  // 操作パネル表示トグル（Pキー）
+  /* Pキーで操作パネル表示 */
   let controlsVisible = false;
   document.addEventListener("keydown", (e)=>{
     if(e.key.toLowerCase()==="p"){
@@ -130,9 +131,8 @@
     }
   });
 
-  // 初期表示
+  /* 初期表示 */
   setPlayer(1);
 </script>
 </body>
 </html>
-
