@@ -41,7 +41,7 @@
     z-index: 5;
   }
 
-  /* ネームプレート画像 */
+  /* ネームプレート画像（縦横とも半分） */
   #nameplate img {
     width: 100%;
     height: auto;
@@ -96,7 +96,7 @@
     return String(n).padStart(3, "0");
   }
 
-  // VDO Ninja 映像（IDはCのまま）
+  // VDO Ninja 映像（部屋IDは C のまま）
   function viewUrl(n){
     return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
   }
