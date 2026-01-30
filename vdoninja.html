@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>OR40 Side View</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: "Noto Sans JP", sans-serif;
+  }
+
+  #frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: black;
+  }
+
+  #game {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  #nameplate {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    height: 80px;
+    background: linear-gradient(90deg, #ff5f9e, #7f5fff);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+    box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  }
+
+  #controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 8px;
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+    gap: 4px;
+  }
+
+  #controls button {
+    padding: 6px 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div id="frame">
+  <iframe id="game" allow="autoplay; fullscreen" scrolling="no"></iframe>
+  <div id="nameplate">C001</div>
+  <div id="controls"></div>
+</div>
+
+<script>
+  const MAX_PLAYERS = 40;
+
+  function pad(n){ return String(n).padStart(3,"0"); }
+
+  // あなたのテストURLに合わせて固定
+  function viewUrl(n){
+    return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
+  }
+
+  function setPlayer(n){
+    document.getElementById("game").src = viewUrl(n);
+    document.getElementById("nameplate").textContent = `C${pad(n)}`;
+  }
+
+  // ボタン生成
+  const controls = document.getElementById("controls");
+  for(let i=1;i<=MAX_PLAYERS;i++){
+    const b = document.createElement("button");
+    b.textContent = `C${pad(i)}`;
+    b.onclick = ()=>setPlayer(i);
+    controls.appendChild(b);
+  }
+
+  // 初期表示：C001
+  setPlayer(1);
+</script>
+
+</body>
+</html>
