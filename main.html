@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>OR40 Single View</title>
+
+<style>
+  :root{
+    --plateScale: 0.35;
+    --plateTop: 10px;
+    --plateLeft: 10px;
+  }
+
+  html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    background:#000;
+    overflow:hidden;
+    font-family:sans-serif;
+  }
+
+  #frame{
+    position:relative;
+    width:100%;
+    height:100%;
+    background:#000;
+    overflow:hidden;
+  }
+
+  /* ===== ゲーム全体 ===== */
+  #gameArea{
+    position:absolute;
+    inset:0;
+    background:#000;
+    overflow:hidden;
+  }
+
+  /* ===== 16:9 cover ===== */
+  #game16x9{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    background:#000;
+    overflow:hidden;
+  }
+
+  #game{
+    width:100%;
+    height:100%;
+    border:none;
+    display:block;
+  }
+
+  /* ===== ネームプレート（ゲームに重ねる） ===== */
+  #nameplate{
+    position:absolute;
+    top:var(--plateTop);
+    left:var(--plateLeft);
+    z-index:10;
+    pointer-events:none;
+  }
+
+  #nameplate img{
+    display:block;
+    transform:scale(var(--plateScale));
+    transform-origin:top left;
+  }
+</style>
+</head>
+
+<body>
+<div id="frame">
+
+  <!-- ゲーム -->
+  <div id="gameArea">
+    <div id="game16x9">
+      <iframe
+        id="game"
+        allow="autoplay; fullscreen; camera; microphone"
+        allowfullscreen
+        scrolling="no"></iframe>
+    </div>
+  </div>
+
+  <!-- ネームプレート -->
+  <div id="nameplate">
+    <img id="nameImg" src="" alt="">
+  </div>
+
+</div>
+
+<script>
+  function pad(n){ return String(n).padStart(3,"0"); }
+
+  function viewUrl(n){
+    return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
+  }
+
+  function plateUrl(n){
+    return `overlays/P${pad(n)}.png`;
+  }
+
+  /* 16:9 cover 計算 */
+  function fitGame(){
+    const area = document.getElementById("gameArea");
+    const box  = document.getElementById("game16x9");
+
+    const W = area.clientWidth;
+    const H = area.clientHeight;
+
+    const target = 16/9;
+    const ar = W / H;
+
+    let bw, bh;
+    if(ar >= target){
+      bh = H;
+      bw = Math.ceil(H * target);
+    }else{
+      bw = W;
+      bh = Math.ceil(W / target);
+    }
+
+    box.style.width  = bw + "px";
+    box.style.height = bh + "px";
+  }
+
+  window.addEventListener("resize", fitGame);
+
+  function setPlayer(n){
+    document.getElementById("game").src = viewUrl(n);
+    document.getElementById("nameImg").src = plateUrl(n);
+  }
+
+  fitGame();
+  setPlayer(1);   // 初期表示
+</script>
+</body>
+</html>
