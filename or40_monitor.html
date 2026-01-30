@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>OR40 監視（範囲指定クロップ／オーバーレイUI／スポットライト修正版）</title>
+<style>
+  :root {
+    --bg:#0b0b0f;
+    --gap:10px;
+    --tileRadius:14px;
+    --tileBorder:1px solid rgba(255,255,255,.12);
+    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", "Yu Gothic", sans-serif;
+
+    --srcW:1920;
+    --srcH:1080;
+
+    /* Crop box from bottom-left (HP用) */
+    --cropLeft: 0;
+    --cropBottom: 0;
+    --cropW: 560;
+    --cropH: 320;
+
+    --cols:8;
+  }
+
+  html,body {
+    height:100%;
+    margin:0;
+    background:var(--bg);
+    color:#fff;
+    font-family:var(--font);
+    overflow:hidden;
+  }
+
+  .top {
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:10px 12px;
+    background:linear-gradient(to bottom, rgba(11,11,15,.95), rgba(11,11,15,.65));
+    backdrop-filter: blur(8px);
+    border-bottom:1px solid rgba(255,255,255,.10);
+  }
+  .top b { font-size:14px; }
+  .pill {
+    padding:4px 10px;
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:999px;
+    background: rgba(255,255,255,.06);
+    font-size:12px;
+    opacity:.9;
+  }
+  .btn {
+    background: rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.14);
+    color:#fff;
+    padding:6px 10px;
+    border-radius:999px;
+    cursor:pointer;
+    font-weight:900;
+    font-size:12px;
+  }
+  .btn.secondary { font-weight:800; opacity:.95; }
+
+  .gridWrap {
+    padding: var(--gap);
+    box-sizing:border-box;
+    height: calc(100vh - 54px);
+  }
+  .grid {
+    display:grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    gap: var(--gap);
+    height: 100%;
+  }
+
+  .tile {
+    position:relative;
+    border-radius:var(--tileRadius);
+    overflow:hidden;
+    border:var(--tileBorder);
+    background:#111;
+    min-width:0;
+    min-height:0;
+  }
+  .tile.hidden { display:none; }
+
+  /* Clickable badge */
+  .badgeBtn {
+    position:absolute;
+    left:8px; top:8px;
+    z-index:6;
+    padding:3px 10px;
+    border-radius:999px;
+    background:rgba(0,0,0,.55);
+    border:1px solid rgba(255,255,255,.14);
+    color:#fff;
+    font-size:11px;
+    font-weight:900;
+    letter-spacing:.03em;
+    user-select:none;
+    cursor:pointer;
+  }
+  .badgeBtn:hover { background:rgba(0,0,0,.7); }
+  .badgeBtn:active { transform: translateY(1px); }
+
+  .crop {
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    background:#000;
+  }
+
+  iframe { border:0; background:#000; }
+
+  /* mode classes live on #grid */
+  #grid.mode-normal .inner { position:absolute; inset:0; transform:none !important; left:0 !important; top:0 !important; }
+  #grid.mode-normal iframe { width:100%; height:100%; }
+
+  #grid.mode-hp .inner {
+    position:absolute;
+    left: var(--innerLeft, 0px);
+    top: var(--innerTop, 0px);
+    transform: scale(var(--innerScale, 1));
+    transform-origin: top left;
+  }
+  #grid.mode-hp iframe {
+    width: calc(var(--srcW) * 1px);
+    height: calc(var(--srcH) * 1px);
+  }
+
+  /* Control overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display:none;
+  }
+  .overlay.open { display:block; }
+  .overlay .backdrop { position:absolute; inset:0; background: rgba(0,0,0,.45); }
+  .panel {
+    position:absolute;
+    top: 70px;
+    right: 12px;
+    width: min(560px, calc(100vw - 24px));
+    max-height: calc(100vh - 90px);
+    overflow:auto;
+    background: rgba(15,16,22,.92);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 16px;
+    box-shadow: 0 18px 55px rgba(0,0,0,.55);
+    backdrop-filter: blur(10px);
+  }
+  .panelHead {
+    padding: 12px 12px 8px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+  }
+  .panelHead b { font-size:13px; }
+  .panelHead .mini { font-size:12px; opacity:.75; }
+  .panelBody {
+    padding: 12px;
+    display:flex;
+    flex-direction:column;
+    gap: 12px;
+  }
+  .rowBtns { display:flex; flex-wrap:wrap; gap:8px; }
+  .rowBtns .btn { padding:6px 10px; }
+
+  .box {
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 14px;
+    background: rgba(255,255,255,.04);
+    display:grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .box label {
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    font-size:12px; opacity:.92;
+  }
+  .box input[type="range"] { width: 280px; }
+  .note { font-size:12px; opacity:.7; line-height:1.25; }
+
+  .numGrid {
+    display:grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 8px;
+  }
+  .num {
+    user-select:none;
+    cursor:pointer;
+    border-radius: 12px;
+    padding: 8px 0;
+    text-align:center;
+    font-weight:900;
+    font-size:12px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    opacity:.95;
+  }
+  .num.off { opacity:.35; background: rgba(255,255,255,.02); }
+
+  /* Spotlight overlay */
+  .spot {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display:none;
+  }
+  .spot.open { display:block; }
+  .spot .backdrop { position:absolute; inset:0; background: rgba(0,0,0,.65); }
+  .spot .window {
+    position:absolute;
+    left: 10px; right: 10px; top: 64px; bottom: 10px;
+    border-radius: 18px;
+    overflow:hidden;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(10,10,14,.92);
+    box-shadow: 0 18px 70px rgba(0,0,0,.65);
+    backdrop-filter: blur(10px);
+    display:flex;
+    flex-direction:column;
+  }
+  .spotbar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 12px;
+    background: rgba(0,0,0,.45);
+    border-bottom: 1px solid rgba(255,255,255,.10);
+  }
+  .spotbar .left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .spotbar b { font-size:13px; }
+  .spotbar .mini { font-size:12px; opacity:.75; }
+
+  .spotcontent {
+    position:relative;
+    flex:1;
+    overflow:hidden;
+    background:#000;
+  }
+
+  /* NORMAL mode: iframe must fill spotlight (FIX) */
+  .spotcontent.normal iframe {
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+  }
+  .spotcontent.normal .inner { display:none; }
+
+  /* HP mode: show cropped region using inner */
+  .spotcontent.hp iframe {
+    width: calc(var(--srcW) * 1px);
+    height: calc(var(--srcH) * 1px);
+  }
+  .spotcontent.hp .inner {
+    display:block;
+    position:absolute;
+    transform-origin: top left;
+  }
+
+  @media (max-width: 980px) {
+    .numGrid { grid-template-columns: repeat(8, 1fr); }
+    .box input[type="range"] { width: 220px; }
+  }
+  @media (max-width: 720px) {
+    .numGrid { grid-template-columns: repeat(6, 1fr); }
+  }
+</style>
+</head>
+<body>
+  <div class="top">
+    <b>OR40 監視</b>
+    <span class="pill">残り：<span id="remain">40</span></span>
+    <button class="btn" id="btnMode" onclick="toggleMode()">表示：HP</button>
+    <button class="btn secondary" onclick="openOverlay()">操作（ON/OFF）</button>
+    <span class="pill">スポットライト：各枠左上の <strong>C001</strong> ボタン</span>
+  </div>
+
+  <div class="gridWrap">
+    <div class="grid mode-hp" id="grid">
+      
+    <div class="tile" id="tile1" data-idx="1">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(1); event.stopPropagation();">C001</button>
+      <div class="crop">
+        <div class="inner" id="inner1">
+          <iframe id="frame1" src="https://vdo.ninja/?view=OR40_C001&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile2" data-idx="2">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(2); event.stopPropagation();">C002</button>
+      <div class="crop">
+        <div class="inner" id="inner2">
+          <iframe id="frame2" src="https://vdo.ninja/?view=OR40_C002&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile3" data-idx="3">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(3); event.stopPropagation();">C003</button>
+      <div class="crop">
+        <div class="inner" id="inner3">
+          <iframe id="frame3" src="https://vdo.ninja/?view=OR40_C003&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile4" data-idx="4">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(4); event.stopPropagation();">C004</button>
+      <div class="crop">
+        <div class="inner" id="inner4">
+          <iframe id="frame4" src="https://vdo.ninja/?view=OR40_C004&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile5" data-idx="5">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(5); event.stopPropagation();">C005</button>
+      <div class="crop">
+        <div class="inner" id="inner5">
+          <iframe id="frame5" src="https://vdo.ninja/?view=OR40_C005&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile6" data-idx="6">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(6); event.stopPropagation();">C006</button>
+      <div class="crop">
+        <div class="inner" id="inner6">
+          <iframe id="frame6" src="https://vdo.ninja/?view=OR40_C006&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile7" data-idx="7">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(7); event.stopPropagation();">C007</button>
+      <div class="crop">
+        <div class="inner" id="inner7">
+          <iframe id="frame7" src="https://vdo.ninja/?view=OR40_C007&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile8" data-idx="8">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(8); event.stopPropagation();">C008</button>
+      <div class="crop">
+        <div class="inner" id="inner8">
+          <iframe id="frame8" src="https://vdo.ninja/?view=OR40_C008&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile9" data-idx="9">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(9); event.stopPropagation();">C009</button>
+      <div class="crop">
+        <div class="inner" id="inner9">
+          <iframe id="frame9" src="https://vdo.ninja/?view=OR40_C009&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile10" data-idx="10">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(10); event.stopPropagation();">C010</button>
+      <div class="crop">
+        <div class="inner" id="inner10">
+          <iframe id="frame10" src="https://vdo.ninja/?view=OR40_C010&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile11" data-idx="11">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(11); event.stopPropagation();">C011</button>
+      <div class="crop">
+        <div class="inner" id="inner11">
+          <iframe id="frame11" src="https://vdo.ninja/?view=OR40_C011&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile12" data-idx="12">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(12); event.stopPropagation();">C012</button>
+      <div class="crop">
+        <div class="inner" id="inner12">
+          <iframe id="frame12" src="https://vdo.ninja/?view=OR40_C012&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile13" data-idx="13">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(13); event.stopPropagation();">C013</button>
+      <div class="crop">
+        <div class="inner" id="inner13">
+          <iframe id="frame13" src="https://vdo.ninja/?view=OR40_C013&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile14" data-idx="14">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(14); event.stopPropagation();">C014</button>
+      <div class="crop">
+        <div class="inner" id="inner14">
+          <iframe id="frame14" src="https://vdo.ninja/?view=OR40_C014&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile15" data-idx="15">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(15); event.stopPropagation();">C015</button>
+      <div class="crop">
+        <div class="inner" id="inner15">
+          <iframe id="frame15" src="https://vdo.ninja/?view=OR40_C015&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile16" data-idx="16">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(16); event.stopPropagation();">C016</button>
+      <div class="crop">
+        <div class="inner" id="inner16">
+          <iframe id="frame16" src="https://vdo.ninja/?view=OR40_C016&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile17" data-idx="17">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(17); event.stopPropagation();">C017</button>
+      <div class="crop">
+        <div class="inner" id="inner17">
+          <iframe id="frame17" src="https://vdo.ninja/?view=OR40_C017&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile18" data-idx="18">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(18); event.stopPropagation();">C018</button>
+      <div class="crop">
+        <div class="inner" id="inner18">
+          <iframe id="frame18" src="https://vdo.ninja/?view=OR40_C018&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile19" data-idx="19">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(19); event.stopPropagation();">C019</button>
+      <div class="crop">
+        <div class="inner" id="inner19">
+          <iframe id="frame19" src="https://vdo.ninja/?view=OR40_C019&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile20" data-idx="20">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(20); event.stopPropagation();">C020</button>
+      <div class="crop">
+        <div class="inner" id="inner20">
+          <iframe id="frame20" src="https://vdo.ninja/?view=OR40_C020&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile21" data-idx="21">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(21); event.stopPropagation();">C021</button>
+      <div class="crop">
+        <div class="inner" id="inner21">
+          <iframe id="frame21" src="https://vdo.ninja/?view=OR40_C021&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile22" data-idx="22">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(22); event.stopPropagation();">C022</button>
+      <div class="crop">
+        <div class="inner" id="inner22">
+          <iframe id="frame22" src="https://vdo.ninja/?view=OR40_C022&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile23" data-idx="23">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(23); event.stopPropagation();">C023</button>
+      <div class="crop">
+        <div class="inner" id="inner23">
+          <iframe id="frame23" src="https://vdo.ninja/?view=OR40_C023&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile24" data-idx="24">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(24); event.stopPropagation();">C024</button>
+      <div class="crop">
+        <div class="inner" id="inner24">
+          <iframe id="frame24" src="https://vdo.ninja/?view=OR40_C024&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile25" data-idx="25">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(25); event.stopPropagation();">C025</button>
+      <div class="crop">
+        <div class="inner" id="inner25">
+          <iframe id="frame25" src="https://vdo.ninja/?view=OR40_C025&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile26" data-idx="26">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(26); event.stopPropagation();">C026</button>
+      <div class="crop">
+        <div class="inner" id="inner26">
+          <iframe id="frame26" src="https://vdo.ninja/?view=OR40_C026&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile27" data-idx="27">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(27); event.stopPropagation();">C027</button>
+      <div class="crop">
+        <div class="inner" id="inner27">
+          <iframe id="frame27" src="https://vdo.ninja/?view=OR40_C027&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile28" data-idx="28">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(28); event.stopPropagation();">C028</button>
+      <div class="crop">
+        <div class="inner" id="inner28">
+          <iframe id="frame28" src="https://vdo.ninja/?view=OR40_C028&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile29" data-idx="29">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(29); event.stopPropagation();">C029</button>
+      <div class="crop">
+        <div class="inner" id="inner29">
+          <iframe id="frame29" src="https://vdo.ninja/?view=OR40_C029&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile30" data-idx="30">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(30); event.stopPropagation();">C030</button>
+      <div class="crop">
+        <div class="inner" id="inner30">
+          <iframe id="frame30" src="https://vdo.ninja/?view=OR40_C030&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile31" data-idx="31">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(31); event.stopPropagation();">C031</button>
+      <div class="crop">
+        <div class="inner" id="inner31">
+          <iframe id="frame31" src="https://vdo.ninja/?view=OR40_C031&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile32" data-idx="32">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(32); event.stopPropagation();">C032</button>
+      <div class="crop">
+        <div class="inner" id="inner32">
+          <iframe id="frame32" src="https://vdo.ninja/?view=OR40_C032&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile33" data-idx="33">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(33); event.stopPropagation();">C033</button>
+      <div class="crop">
+        <div class="inner" id="inner33">
+          <iframe id="frame33" src="https://vdo.ninja/?view=OR40_C033&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile34" data-idx="34">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(34); event.stopPropagation();">C034</button>
+      <div class="crop">
+        <div class="inner" id="inner34">
+          <iframe id="frame34" src="https://vdo.ninja/?view=OR40_C034&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile35" data-idx="35">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(35); event.stopPropagation();">C035</button>
+      <div class="crop">
+        <div class="inner" id="inner35">
+          <iframe id="frame35" src="https://vdo.ninja/?view=OR40_C035&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile36" data-idx="36">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(36); event.stopPropagation();">C036</button>
+      <div class="crop">
+        <div class="inner" id="inner36">
+          <iframe id="frame36" src="https://vdo.ninja/?view=OR40_C036&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile37" data-idx="37">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(37); event.stopPropagation();">C037</button>
+      <div class="crop">
+        <div class="inner" id="inner37">
+          <iframe id="frame37" src="https://vdo.ninja/?view=OR40_C037&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile38" data-idx="38">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(38); event.stopPropagation();">C038</button>
+      <div class="crop">
+        <div class="inner" id="inner38">
+          <iframe id="frame38" src="https://vdo.ninja/?view=OR40_C038&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile39" data-idx="39">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(39); event.stopPropagation();">C039</button>
+      <div class="crop">
+        <div class="inner" id="inner39">
+          <iframe id="frame39" src="https://vdo.ninja/?view=OR40_C039&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tile" id="tile40" data-idx="40">
+      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(40); event.stopPropagation();">C040</button>
+      <div class="crop">
+        <div class="inner" id="inner40">
+          <iframe id="frame40" src="https://vdo.ninja/?view=OR40_C040&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    </div>
+  </div>
+
+  <!-- Control overlay -->
+  <div class="overlay" id="overlay">
+    <div class="backdrop" onclick="closeOverlay()"></div>
+    <div class="panel" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+      <div class="panelHead">
+        <div>
+          <b>表示ON/OFF（クリックで切替）</b>
+          <div class="mini">C001〜C040 / 範囲指定クロップ（HP用）</div>
+        </div>
+        <button class="btn" onclick="closeOverlay()">閉じる</button>
+      </div>
+      <div class="panelBody">
+        <div class="rowBtns">
+          <button class="btn secondary" onclick="showAll()">全表示</button>
+          <button class="btn secondary" onclick="hideAll()">全非表示</button>
+          <button class="btn" onclick="toggleMode()">通常/HP</button>
+        </div>
+
+        <div class="box">
+          <div class="note">HPは左下から範囲指定。分割が変わってもズレない。</div>
+          <label>範囲幅 cropW <span><input type="range" min="300" max="900" step="10" value="560" oninput="setCropW(this.value)"></span></label>
+          <label>範囲高 cropH <span><input type="range" min="200" max="700" step="10" value="320" oninput="setCropH(this.value)"></span></label>
+          <label>下から cropBottom <span><input type="range" min="0" max="400" step="10" value="0" oninput="setCropBottom(this.value)"></span></label>
+          <label>左から cropLeft <span><input type="range" min="0" max="600" step="10" value="0" oninput="setCropLeft(this.value)"></span></label>
+        </div>
+
+        <div class="numGrid">
+          <div class="num" id="num1" onclick="toggleOne(1); event.stopPropagation();">01</div><div class="num" id="num2" onclick="toggleOne(2); event.stopPropagation();">02</div><div class="num" id="num3" onclick="toggleOne(3); event.stopPropagation();">03</div><div class="num" id="num4" onclick="toggleOne(4); event.stopPropagation();">04</div><div class="num" id="num5" onclick="toggleOne(5); event.stopPropagation();">05</div><div class="num" id="num6" onclick="toggleOne(6); event.stopPropagation();">06</div><div class="num" id="num7" onclick="toggleOne(7); event.stopPropagation();">07</div><div class="num" id="num8" onclick="toggleOne(8); event.stopPropagation();">08</div><div class="num" id="num9" onclick="toggleOne(9); event.stopPropagation();">09</div><div class="num" id="num10" onclick="toggleOne(10); event.stopPropagation();">10</div><div class="num" id="num11" onclick="toggleOne(11); event.stopPropagation();">11</div><div class="num" id="num12" onclick="toggleOne(12); event.stopPropagation();">12</div><div class="num" id="num13" onclick="toggleOne(13); event.stopPropagation();">13</div><div class="num" id="num14" onclick="toggleOne(14); event.stopPropagation();">14</div><div class="num" id="num15" onclick="toggleOne(15); event.stopPropagation();">15</div><div class="num" id="num16" onclick="toggleOne(16); event.stopPropagation();">16</div><div class="num" id="num17" onclick="toggleOne(17); event.stopPropagation();">17</div><div class="num" id="num18" onclick="toggleOne(18); event.stopPropagation();">18</div><div class="num" id="num19" onclick="toggleOne(19); event.stopPropagation();">19</div><div class="num" id="num20" onclick="toggleOne(20); event.stopPropagation();">20</div><div class="num" id="num21" onclick="toggleOne(21); event.stopPropagation();">21</div><div class="num" id="num22" onclick="toggleOne(22); event.stopPropagation();">22</div><div class="num" id="num23" onclick="toggleOne(23); event.stopPropagation();">23</div><div class="num" id="num24" onclick="toggleOne(24); event.stopPropagation();">24</div><div class="num" id="num25" onclick="toggleOne(25); event.stopPropagation();">25</div><div class="num" id="num26" onclick="toggleOne(26); event.stopPropagation();">26</div><div class="num" id="num27" onclick="toggleOne(27); event.stopPropagation();">27</div><div class="num" id="num28" onclick="toggleOne(28); event.stopPropagation();">28</div><div class="num" id="num29" onclick="toggleOne(29); event.stopPropagation();">29</div><div class="num" id="num30" onclick="toggleOne(30); event.stopPropagation();">30</div><div class="num" id="num31" onclick="toggleOne(31); event.stopPropagation();">31</div><div class="num" id="num32" onclick="toggleOne(32); event.stopPropagation();">32</div><div class="num" id="num33" onclick="toggleOne(33); event.stopPropagation();">33</div><div class="num" id="num34" onclick="toggleOne(34); event.stopPropagation();">34</div><div class="num" id="num35" onclick="toggleOne(35); event.stopPropagation();">35</div><div class="num" id="num36" onclick="toggleOne(36); event.stopPropagation();">36</div><div class="num" id="num37" onclick="toggleOne(37); event.stopPropagation();">37</div><div class="num" id="num38" onclick="toggleOne(38); event.stopPropagation();">38</div><div class="num" id="num39" onclick="toggleOne(39); event.stopPropagation();">39</div><div class="num" id="num40" onclick="toggleOne(40); event.stopPropagation();">40</div>
+        </div>
+
+        <div class="note">・ESCで閉じる（スポットライト→操作パネルの順）</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spotlight overlay -->
+  <div class="spot" id="spot">
+    <div class="backdrop" onclick="closeSpotlight()"></div>
+    <div class="window" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+      <div class="spotbar">
+        <div class="left">
+          <b id="spotTitle">スポットライト</b>
+          <span class="mini" id="spotMode">通常表示</span>
+        </div>
+        <div class="left">
+          <button class="btn secondary" onclick="toggleSpotMode()">通常/HP</button>
+          <label class="pill" style="display:flex; align-items:center; gap:8px;">
+            音 <input type="checkbox" id="spotAudio" onchange="toggleSpotAudio(this.checked)">
+          </label>
+          <button class="btn secondary" onclick="toggleFullscreen()">全画面</button>
+          <button class="btn" onclick="closeSpotlight()">閉じる</button>
+        </div>
+      </div>
+      <div class="spotcontent normal" id="spotContent">
+        <!-- Normal: iframe directly fills -->
+        <iframe id="spotFrame" src="about:blank" allow="autoplay; display-capture"></iframe>
+        <!-- HP: use inner (hidden in normal) -->
+        <div class="inner" id="spotInner" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const total = 40;
+  let mode = 'hp';
+  let spotMode = 'normal'; // DEFAULT is normal (user request)
+  let spotIdx = null;
+
+  function computeCols(n){
+    if(n <= 2) return 2;
+    if(n <= 4) return 2;
+    if(n <= 6) return 3;
+    if(n <= 9) return 3;
+    if(n <= 12) return 4;
+    if(n <= 16) return 4;
+    if(n <= 20) return 5;
+    if(n <= 24) return 6;
+    if(n <= 30) return 6;
+    if(n <= 36) return 7;
+    return 8;
+  }
+
+  function getNumVar(name) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return Number(v);
+  }
+
+  function computeCropTransform(containerW, containerH){
+    const cropW = getNumVar('--cropW');
+    const cropH = getNumVar('--cropH');
+    const cropLeft = getNumVar('--cropLeft');
+    const cropBottom = getNumVar('--cropBottom');
+    const srcH = getNumVar('--srcH');
+
+    const s = Math.min(containerW / cropW, containerH / cropH);
+    const cropTop = srcH - cropBottom - cropH;
+    const left = (-cropLeft * s);
+    const top = (-cropTop * s);
+    return {s, left, top};
+  }
+
+  function updateLayout(){
+    const tiles = Array.from(document.querySelectorAll('.tile'));
+    const visible = tiles.filter(t => !t.classList.contains('hidden'));
+    document.getElementById('remain').textContent = visible.length;
+    document.documentElement.style.setProperty('--cols', computeCols(visible.length));
+    requestAnimationFrame(updateAllTransforms);
+    requestAnimationFrame(updateSpotTransform);
+  }
+
+  function applyMode(){
+    const grid = document.getElementById('grid');
+    grid.classList.toggle('mode-hp', mode === 'hp');
+    grid.classList.toggle('mode-normal', mode === 'normal');
+    document.getElementById('btnMode').textContent = (mode === 'hp') ? '表示：HP' : '表示：通常';
+    requestAnimationFrame(updateAllTransforms);
+  }
+
+  function toggleMode(){
+    mode = (mode === 'hp') ? 'normal' : 'hp';
+    applyMode();
+  }
+
+  function setVisible(idx, on){
+    const tile = document.getElementById('tile'+idx);
+    const num = document.getElementById('num'+idx);
+    if(!tile || !num) return;
+    tile.classList.toggle('hidden', !on);
+    num.classList.toggle('off', !on);
+    updateLayout();
+  }
+  function toggleOne(idx){
+    const tile = document.getElementById('tile'+idx);
+    const turningOn = tile.classList.contains('hidden');
+    setVisible(idx, turningOn);
+  }
+  function showAll(){ for(let i=1;i<=total;i++) setVisible(i, true); }
+  function hideAll(){ for(let i=1;i<=total;i++) setVisible(i, false); }
+
+  function openOverlay(){ document.getElementById('overlay').classList.add('open'); }
+  function closeOverlay(){ document.getElementById('overlay').classList.remove('open'); }
+
+  // Crop setters
+  function setVar(name, v){ document.documentElement.style.setProperty(name, v); requestAnimationFrame(updateAllTransforms); requestAnimationFrame(updateSpotTransform); }
+  function setCropW(v){ setVar('--cropW', Number(v)); }
+  function setCropH(v){ setVar('--cropH', Number(v)); }
+  function setCropBottom(v){ setVar('--cropBottom', Number(v)); }
+  function setCropLeft(v){ setVar('--cropLeft', Number(v)); }
+
+  function updateOneTransform(tileEl){
+    if(mode !== 'hp') return;
+    if(tileEl.classList.contains('hidden')) return;
+    const inner = tileEl.querySelector('.inner');
+    if(!inner) return;
+    const rect = tileEl.getBoundingClientRect();
+    const t = computeCropTransform(rect.width, rect.height);
+    inner.style.setProperty('--innerScale', t.s);
+    inner.style.setProperty('--innerLeft', t.left + 'px');
+    inner.style.setProperty('--innerTop', t.top + 'px');
+  }
+  function updateAllTransforms(){ document.querySelectorAll('.tile').forEach(updateOneTransform); }
+
+  // Spotlight
+  function openSpotlight(idx){
+    if(document.getElementById('overlay').classList.contains('open')) return;
+    spotIdx = idx;
+    const cid = 'C' + String(idx).padStart(3,'0');
+    document.getElementById('spotTitle').textContent = 'スポットライト：' + cid;
+
+    // stream URL (mute default)
+    const f = document.getElementById('spotFrame');
+    const base = 'https://vdo.ninja/?view=OR40_C' + String(idx).padStart(3,'0') + '&cleanoutput';
+    f.src = base + '&mute';
+    document.getElementById('spotAudio').checked = false;
+
+    // DEFAULT normal
+    spotMode = 'normal';
+    updateSpotModeLabel();
+    applySpotMode();
+
+    document.getElementById('spot').classList.add('open');
+  }
+
+  function closeSpotlight(){
+    document.getElementById('spot').classList.remove('open');
+    document.getElementById('spotFrame').src = 'about:blank';
+    // clear hp inner
+    const inner = document.getElementById('spotInner');
+    inner.innerHTML = '';
+    inner.style.display = 'none';
+    spotIdx = null;
+  }
+
+  function updateSpotModeLabel(){ document.getElementById('spotMode').textContent = (spotMode === 'hp') ? 'HP範囲' : '通常表示'; }
+
+  function ensureHpInner(){
+    const inner = document.getElementById('spotInner');
+    const frame = document.getElementById('spotFrame');
+    if(inner.dataset.hasHp === '1') return;
+
+    // Create a separate iframe for HP mode to avoid style conflicts with normal iframe
+    const hpFrame = document.createElement('iframe');
+    hpFrame.id = 'spotHpFrame';
+    hpFrame.allow = 'autoplay; display-capture';
+    hpFrame.style.border = '0';
+    hpFrame.style.background = '#000';
+    // keep same src as normal
+    hpFrame.src = frame.src;
+    inner.appendChild(hpFrame);
+    inner.dataset.hasHp = '1';
+  }
+
+  function syncHpSrcFromNormal(){
+    const normal = document.getElementById('spotFrame');
+    const hp = document.getElementById('spotHpFrame');
+    if(hp && normal && hp.src !== normal.src) hp.src = normal.src;
+  }
+
+  function applySpotMode(){
+    const content = document.getElementById('spotContent');
+    const normalFrame = document.getElementById('spotFrame');
+    const inner = document.getElementById('spotInner');
+
+    if(spotMode === 'normal') {
+      content.classList.remove('hp');
+      content.classList.add('normal');
+      inner.style.display = 'none';
+      normalFrame.style.display = 'block';
+    } else {
+      content.classList.remove('normal');
+      content.classList.add('hp');
+      ensureHpInner();
+      syncHpSrcFromNormal();
+      inner.style.display = 'block';
+      normalFrame.style.display = 'none';
+      requestAnimationFrame(updateSpotTransform);
+    }
+  }
+
+  function updateSpotTransform(){
+    const spot = document.getElementById('spot');
+    if(!spot.classList.contains('open')) return;
+    if(spotMode !== 'hp') return;
+
+    const content = document.getElementById('spotContent');
+    const rect = content.getBoundingClientRect();
+    const t = computeCropTransform(rect.width, rect.height);
+
+    const inner = document.getElementById('spotInner');
+    inner.style.transform = 'scale(' + t.s + ')';
+    inner.style.left = t.left + 'px';
+    inner.style.top = t.top + 'px';
+
+    const hpFrame = document.getElementById('spotHpFrame');
+    if(hpFrame) {
+      hpFrame.style.width = 'calc(var(--srcW) * 1px)';
+      hpFrame.style.height = 'calc(var(--srcH) * 1px)';
+    }
+  }
+
+  function toggleSpotMode(){
+    spotMode = (spotMode === 'hp') ? 'normal' : 'hp';
+    updateSpotModeLabel();
+    applySpotMode();
+  }
+
+  function toggleSpotAudio(on){
+    // apply to normal frame (hp syncs)
+    const f = document.getElementById('spotFrame');
+    if(!spotIdx || !f || f.src === 'about:blank') return;
+    const u = new URL(f.src);
+    if(on) u.searchParams.delete('mute');
+    else u.searchParams.set('mute','');
+    f.src = u.toString();
+
+    // sync hp if exists
+    const hp = document.getElementById('spotHpFrame');
+    if(hp) hp.src = f.src;
+  }
+
+  function toggleFullscreen(){
+    const win = document.querySelector('.spot .window');
+    if(!document.fullscreenElement) win.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  }
+
+  // ESC priority
+  document.addEventListener('keydown', (e) => {
+    if(e.key !== 'Escape') return;
+    if(document.getElementById('spot').classList.contains('open')) { closeSpotlight(); return; }
+    if(document.getElementById('overlay').classList.contains('open')) { closeOverlay(); return; }
+  });
+
+  const ro = new ResizeObserver(() => {
+    requestAnimationFrame(updateAllTransforms);
+    requestAnimationFrame(updateSpotTransform);
+  });
+  ro.observe(document.body);
+
+  // init
+  applyMode();
+  updateLayout();
+</script>
+</body>
+</html>
