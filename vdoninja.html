@@ -5,94 +5,132 @@
 <title>OR40 Side View</title>
 
 <style>
-  :root {
-    --plateH: 150px;  /* ネームプレート帯の高さ */
-    --gapH: 20px;     /* ★ゲーム下端とネーム画像の距離（空白帯は作らない） */
+  :root{
+    --plateH: 150px;  /* ネーム帯の高さ */
+    --gapH: 20px;     /* ゲーム下端→ネーム画像までの距離 */
   }
 
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    background: black;
-    overflow: hidden;
-    font-family: sans-serif;
+  html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    background:#000;
+    overflow:hidden;
+    font-family:sans-serif;
   }
 
-  #frame {
-    position: relative;
-    width: 100%;
-    height: 100%;
+  #frame{
+    position:relative;
+    width:100%;
+    height:100%;
+    background:#000;
   }
 
-  /* ===== ゲーム映像（下を空けるのは plateH だけ） ===== */
-  #game {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: calc(100% - var(--plateH));  /* ★gapHは引かない */
-    border: none;
+  /* ===== ゲーム表示エリア（ネーム帯分だけ確保） ===== */
+  #gameArea{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height: calc(100% - var(--plateH));
+    background:#000;
+    overflow:hidden;
   }
 
-  /* ===== ネームプレート帯（帯自体は下に固定、画像だけ上にgap分浮かす） ===== */
-  #nameplate {
-    position: absolute;
-    left: 0;
+  /* ===== 16:9の箱（画面いっぱいに“覆う”） =====
+     cover: 黒帯ゼロ / 多少切れる
+  */
+  #gameWrap{
+    position:absolute;
+    inset:0;
+    background:#000;
+    overflow:hidden;
+  }
+
+  /* ここがキモ：コンテナを覆うように16:9をスケール */
+  #game16x9{
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:100%;
+    height:100%;
+    transform:translate(-50%, -50%);
+  }
+
+  /* コンテナの縦横比で切替して、常に16:9で“覆う” */
+  @media (min-aspect-ratio: 16/9){
+    /* 横が広い：高さ基準で合わせる → 左右を切る */
+    #game16x9{ width:auto; height:100%; aspect-ratio:16/9; }
+  }
+  @media (max-aspect-ratio: 16/9){
+    /* 縦が長い：幅基準で合わせる → 上下を切る */
+    #game16x9{ width:100%; height:auto; aspect-ratio:16/9; }
+  }
+
+  #game{
+    width:100%;
+    height:100%;
+    border:none;
+    display:block;
+  }
+
+  /* ===== ネーム帯（画面の下に固定） ===== */
+  #nameplate{
+    position:absolute;
+    left:0;
     top: calc(100% - var(--plateH));
-    width: 100%;
+    width:100%;
     height: var(--plateH);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-top: var(--gapH);     /* ★ここで20px離す（空白帯は作らない） */
-    box-sizing: border-box;
-    pointer-events: none;
-    z-index: 10;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding-top: var(--gapH);
+    box-sizing:border-box;
+    pointer-events:none;
+    z-index:10;
   }
 
-  #nameplate img {
-    width: auto;
-    height: auto;
-    display: block;
-    transform: scale(0.35);
-    transform-origin: bottom center;
+  #nameplate img{
+    width:auto;
+    height:auto;
+    display:block;
+    transform:scale(0.35);
+    transform-origin:bottom center;
   }
 
-  /* ===== 操作パネル（運営用：Pキーで表示/非表示・初期は非表示） ===== */
-  #controls {
-    position: fixed;
-    right: -9999px;        /* 初期は非表示 */
-    top: 10px;
-    z-index: 20;
-    background: rgba(0,0,0,0.75);
-    padding: 8px;
-    border-radius: 8px;
-    display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 5列 */
-    gap: 4px;
-    min-width: 260px;
+  /* ===== 操作パネル（Pキーで表示/非表示・初期は非表示） ===== */
+  #controls{
+    position:fixed;
+    right:-9999px;
+    top:10px;
+    z-index:20;
+    background:rgba(0,0,0,0.75);
+    padding:8px;
+    border-radius:8px;
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:4px;
+    min-width:260px;
   }
 
-  /* LEFT/RIGHTラベル */
-  #sideLabel {
-    grid-column: 1 / -1;
-    text-align: center;
-    font-weight: 800;
-    font-size: 14px;
-    padding: 6px 0;
-    border-radius: 6px;
-    color: #fff;
-    letter-spacing: 1px;
-    user-select: none;
+  #sideLabel{
+    grid-column:1 / -1;
+    text-align:center;
+    font-weight:800;
+    font-size:14px;
+    padding:6px 0;
+    border-radius:6px;
+    color:#fff;
+    letter-spacing:1px;
+    user-select:none;
   }
 
-  #controls button {
-    font-size: 12px;
-    padding: 6px 0;
-    cursor: pointer;
-    white-space: nowrap;
+  #controls button{
+    font-size:12px;
+    padding:6px 0;
+    cursor:pointer;
+    white-space:nowrap;
   }
 </style>
 </head>
@@ -100,12 +138,18 @@
 <body>
 <div id="frame">
 
-  <!-- ゲーム映像 -->
-  <iframe
-    id="game"
-    allow="autoplay; fullscreen; camera; microphone"
-    allowfullscreen
-    scrolling="no"></iframe>
+  <!-- ゲーム領域 -->
+  <div id="gameArea">
+    <div id="gameWrap">
+      <div id="game16x9">
+        <iframe
+          id="game"
+          allow="autoplay; fullscreen; camera; microphone"
+          allowfullscreen
+          scrolling="no"></iframe>
+      </div>
+    </div>
+  </div>
 
   <!-- ネームプレート -->
   <div id="nameplate">
@@ -122,28 +166,23 @@
 <script>
   const MAX_PLAYERS = 40;
 
-  function pad(n){
-    return String(n).padStart(3, "0");
-  }
+  function pad(n){ return String(n).padStart(3,"0"); }
 
-  /* VDO Ninja 映像（IDはCのまま） */
   function viewUrl(n){
     return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
   }
 
-  /* ネームプレート画像（Pで統一） */
   function plateUrl(n){
     return `overlays/P${pad(n)}.png`;
   }
 
-  /* URLから side を判定（left/rightでラベル色分け） */
+  // side判定
   const side = (new URLSearchParams(location.search).get("side") || "left").toLowerCase();
   const sideLabel = document.getElementById("sideLabel");
-
-  if (side === "right") {
+  if(side === "right"){
     sideLabel.textContent = "RIGHT";
     sideLabel.style.background = "rgba(198,40,40,0.95)";
-  } else {
+  }else{
     sideLabel.textContent = "LEFT";
     sideLabel.style.background = "rgba(21,101,192,0.95)";
   }
@@ -155,7 +194,7 @@
     img.alt = `P${pad(n)}`;
   }
 
-  /* ボタン生成：5列×4行（40人） */
+  // ボタン生成
   const controls = document.getElementById("controls");
   for(let i=1;i<=MAX_PLAYERS;i++){
     const b = document.createElement("button");
@@ -164,22 +203,18 @@
     controls.appendChild(b);
   }
 
-  /* Pキーで表示/非表示（右側）・初期は非表示 */
+  // Pキーで表示/非表示（初期は非表示）
   let controlsVisible = false;
-
   function setControlsVisible(v){
     controlsVisible = v;
     controls.style.right = controlsVisible ? "10px" : "-9999px";
   }
   setControlsVisible(false);
 
-  document.addEventListener("keydown", (e)=>{
-    if(e.key.toLowerCase()==="p"){
-      setControlsVisible(!controlsVisible);
-    }
+  document.addEventListener("keydown",(e)=>{
+    if(e.key.toLowerCase()==="p") setControlsVisible(!controlsVisible);
   });
 
-  /* 初期表示 */
   setPlayer(1);
 </script>
 </body>
