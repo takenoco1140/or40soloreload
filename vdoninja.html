@@ -30,27 +30,27 @@
     border: none;
   }
 
-  /* ネームプレート枠 */
+  /* ネームプレート枠（画面外） */
   #nameplate {
     position: absolute;
     left: 50%;
-    bottom: 0;
+    bottom: -140px;              /* ★画面外に完全退避 */
     transform: translateX(-50%);
     width: 90%;
     pointer-events: none;
     z-index: 5;
   }
 
-  /* ネームプレート画像（縦横とも半分） */
+  /* ネームプレート画像 */
   #nameplate img {
     width: 100%;
     height: auto;
     display: block;
-    transform: scale(0.5);
+    transform: scale(0.5);       /* 縦横とも半分 */
     transform-origin: bottom center;
   }
 
-  /* 操作ボタン（画面外） */
+  /* 操作ボタン（画面外・運営用） */
   #controls {
     position: fixed;
     left: -9999px;
@@ -96,12 +96,12 @@
     return String(n).padStart(3, "0");
   }
 
-  // VDO Ninja 映像（部屋IDは C のまま）
+  /* VDO Ninja（映像IDはCのまま） */
   function viewUrl(n){
     return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
   }
 
-  // ネームプレート画像（Pで統一）
+  /* ネームプレート画像（Pで統一） */
   function plateUrl(n){
     return `overlays/P${pad(n)}.png`;
   }
@@ -113,19 +113,19 @@
     img.alt = `P${pad(n)}`;
   }
 
-  /* ボタン生成 */
+  /* 操作ボタン生成（P001〜P040） */
   const controls = document.getElementById("controls");
-  for(let i=1;i<=MAX_PLAYERS;i++){
+  for(let i = 1; i <= MAX_PLAYERS; i++){
     const b = document.createElement("button");
     b.textContent = `P${pad(i)}`;
-    b.onclick = ()=>setPlayer(i);
+    b.onclick = () => setPlayer(i);
     controls.appendChild(b);
   }
 
   /* Pキーで操作パネル表示 */
   let controlsVisible = false;
-  document.addEventListener("keydown", (e)=>{
-    if(e.key.toLowerCase()==="p"){
+  document.addEventListener("keydown", (e) => {
+    if (e.key.toLowerCase() === "p") {
       controlsVisible = !controlsVisible;
       controls.style.left = controlsVisible ? "10px" : "-9999px";
     }
