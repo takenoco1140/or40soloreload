@@ -6,56 +6,31 @@
 
 <style>
   :root{
-    /* === ネームプレート調整（1920x1080想定 初期値） === */
-    --plateScale: 0.38;   /* サイズ */
-    --plateTop: 16px;     /* 上から */
-    --plateLeft: 16px;    /* 左から */
+    --plateScale: 0.38;
+    --plateTop: 16px;
+    --plateLeft: 16px;
   }
 
   html, body{
-    margin:0;
-    padding:0;
-    width:100%;
-    height:100%;
-    background:#000;
-    overflow:hidden;
-    font-family:sans-serif;
+    margin:0; padding:0; width:100%; height:100%;
+    background:#000; overflow:hidden; font-family:sans-serif;
   }
 
   #frame{
-    position:relative;
-    width:100%;
-    height:100%;
-    background:#000;
-    overflow:hidden;
+    position:relative; width:100%; height:100%;
+    background:#000; overflow:hidden;
   }
 
-  /* ===== ゲーム領域（全面） ===== */
-  #gameArea{
-    position:absolute;
-    inset:0;
-    background:#000;
-    overflow:hidden;
-  }
+  #gameArea{ position:absolute; inset:0; background:#000; overflow:hidden; }
 
-  /* ===== 16:9 cover コンテナ ===== */
   #game16x9{
-    position:absolute;
-    top:50%;
-    left:50%;
+    position:absolute; top:50%; left:50%;
     transform:translate(-50%, -50%);
-    background:#000;
-    overflow:hidden;
+    background:#000; overflow:hidden;
   }
 
-  #game{
-    width:100%;
-    height:100%;
-    border:none;
-    display:block;
-  }
+  #game{ width:100%; height:100%; border:none; display:block; }
 
-  /* ===== ネームプレート（左上に重ねる） ===== */
   #nameplate{
     position:absolute;
     top:var(--plateTop);
@@ -74,99 +49,97 @@
 
 <body>
 <div id="frame">
-
-  <!-- ゲーム映像 -->
   <div id="gameArea">
     <div id="game16x9">
-      <iframe
-        id="game"
+      <iframe id="game"
         allow="autoplay; fullscreen; camera; microphone"
-        allowfullscreen
-        scrolling="no"></iframe>
+        allowfullscreen scrolling="no"></iframe>
     </div>
   </div>
 
-  <!-- ネームプレート -->
   <div id="nameplate">
     <img id="nameImg" src="" alt="">
   </div>
-
 </div>
 
 <script>
-  /* ========= 共通設定 ========= */
   const MAX_PLAYERS = 40;
   const STORAGE_KEY = "or40_selected_player";
+  const CHANNEL_NAME = "or40_switch";
 
-  function pad(n){
-    return String(n).padStart(3, "0");
-  }
+  function pad(n){ return String(n).padStart(3,"0"); }
+  function viewUrl(n){ return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`; }
+  function plateUrl(n){ return `overlays/P${pad(n)}.png`; }
 
-  function viewUrl(n){
-    return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
-  }
-
-  function plateUrl(n){
-    return `overlays/P${pad(n)}.png`;
-  }
-
-  /* ========= 16:9 cover 計算（画面基準） ========= */
   function fitGame16x9Cover(){
     const area = document.getElementById("gameArea");
     const box  = document.getElementById("game16x9");
-
-    const W = area.clientWidth;
-    const H = area.clientHeight;
-
-    const target = 16 / 9;
-    const ar = W / H;
+    const W = area.clientWidth, H = area.clientHeight;
+    const target = 16/9, ar = W/H;
 
     let bw, bh;
-    if(ar >= target){
-      bh = H;
-      bw = Math.ceil(H * target);
-    }else{
-      bw = W;
-      bh = Math.ceil(W / target);
-    }
+    if(ar >= target){ bh = H; bw = Math.ceil(H * target); }
+    else{ bw = W; bh = Math.ceil(W / target); }
 
     box.style.width  = bw + "px";
     box.style.height = bh + "px";
   }
-
   window.addEventListener("resize", fitGame16x9Cover);
 
-  /* ========= 表示切替 ========= */
+  let currentN = 0;
   function setPlayer(n){
-    if(n < 1 || n > MAX_PLAYERS) return;
+    n = Number(n);
+    if(!Number.isFinite(n) || n < 1 || n > MAX_PLAYERS) return;
+    if(n === currentN) return; // 無駄な再読み込み防止
+    currentN = n;
+
     document.getElementById("game").src = viewUrl(n);
-    document.getElementById("nameImg").src = plateUrl(n);
-    document.getElementById("nameImg").alt = `P${pad(n)}`;
+    const img = document.getElementById("nameImg");
+    img.src = plateUrl(n);
+    img.alt = `P${pad(n)}`;
   }
 
-  /* ========= controller.html からの受信 ========= */
+  // 1) storageイベント（同一ブラウザ内の別タブ/別ウィンドウ）
   window.addEventListener("storage", (e) => {
     if(e.key !== STORAGE_KEY || !e.newValue) return;
     try{
       const data = JSON.parse(e.newValue);
-      const n = Number(data.n);
-      if(Number.isFinite(n)) setPlayer(n);
+      setPlayer(data.n);
     }catch(_){}
   });
 
-  /* ========= 起動時：最後に選ばれた選手を復元 ========= */
+  // 2) BroadcastChannel（同一ブラウザ内でより確実）
+  let bc = null;
+  try{
+    bc = new BroadcastChannel(CHANNEL_NAME);
+    bc.onmessage = (ev) => {
+      if(!ev || !ev.data) return;
+      setPlayer(ev.data.n);
+    };
+  }catch(_){}
+
+  // 3) ポーリング（イベント取りこぼし対策）
+  let lastT = 0;
+  setInterval(() => {
+    try{
+      const v = localStorage.getItem(STORAGE_KEY);
+      if(!v) return;
+      const data = JSON.parse(v);
+      const t = Number(data.t || 0);
+      if(t && t !== lastT){
+        lastT = t;
+        setPlayer(data.n);
+      }
+    }catch(_){}
+  }, 200);
+
+  // 起動時復元
   try{
     const last = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if(last && Number.isFinite(last.n)){
-      setPlayer(last.n);
-    }else{
-      setPlayer(1);
-    }
-  }catch(_){
-    setPlayer(1);
-  }
+    if(last && Number.isFinite(last.n)) setPlayer(last.n);
+    else setPlayer(1);
+  }catch(_){ setPlayer(1); }
 
-  /* 初期化 */
   fitGame16x9Cover();
 </script>
 </body>
