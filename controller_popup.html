@@ -22,11 +22,11 @@
     padding:10px;
   }
 
-  /* 4列 × 10行 グリッド */
+  /* 3列 × 14行（40人なので最後の行が余る） */
   #grid{
     display:grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(10, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(14, 1fr);
     gap:6px;
     width:100%;
     height:100%;
@@ -55,7 +55,6 @@
     pointer-events:none;
   }
 
-  /* 選択中の視覚フィードバック（あとで消してもOK） */
   .btn.active{
     outline:2px solid #4af;
     outline-offset:-2px;
@@ -84,15 +83,12 @@
     if(!window.opener || typeof window.opener.setPlayer !== "function"){
       return;
     }
-
     window.opener.setPlayer(n);
 
-    // active表示更新（不要ならこのブロック丸ごと消してOK）
     document.querySelectorAll(".btn").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
   }
 
-  // 1〜40生成
   for(let i=1;i<=MAX_PLAYERS;i++){
     const btn = document.createElement("div");
     btn.className = "btn";
