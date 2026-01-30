@@ -6,9 +6,10 @@
 
 <style>
   :root{
-    --plateScale: 0.2;
-    --plateTop: 15px;
-    --plateLeft: 180px;
+    /* === ネームプレート調整（1920x1080想定 初期値） === */
+    --plateScale: 0.38;   /* サイズ */
+    --plateTop: 16px;     /* 上から */
+    --plateLeft: 16px;    /* 左から */
   }
 
   html, body{
@@ -29,7 +30,7 @@
     overflow:hidden;
   }
 
-  /* ===== ゲーム全体 ===== */
+  /* ===== ゲーム領域（全面） ===== */
   #gameArea{
     position:absolute;
     inset:0;
@@ -37,7 +38,7 @@
     overflow:hidden;
   }
 
-  /* ===== 16:9 cover ===== */
+  /* ===== 16:9 cover コンテナ ===== */
   #game16x9{
     position:absolute;
     top:50%;
@@ -54,7 +55,7 @@
     display:block;
   }
 
-  /* ===== ネームプレート（ゲームに重ねる） ===== */
+  /* ===== ネームプレート（左上に重ねる） ===== */
   #nameplate{
     position:absolute;
     top:var(--plateTop);
@@ -74,7 +75,7 @@
 <body>
 <div id="frame">
 
-  <!-- ゲーム -->
+  <!-- ゲーム映像 -->
   <div id="gameArea">
     <div id="game16x9">
       <iframe
@@ -93,7 +94,13 @@
 </div>
 
 <script>
-  function pad(n){ return String(n).padStart(3,"0"); }
+  /* ========= 共通設定 ========= */
+  const MAX_PLAYERS = 40;
+  const STORAGE_KEY = "or40_selected_player";
+
+  function pad(n){
+    return String(n).padStart(3, "0");
+  }
 
   function viewUrl(n){
     return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
@@ -103,15 +110,15 @@
     return `overlays/P${pad(n)}.png`;
   }
 
-  /* 16:9 cover 計算 */
-  function fitGame(){
+  /* ========= 16:9 cover 計算（画面基準） ========= */
+  function fitGame16x9Cover(){
     const area = document.getElementById("gameArea");
     const box  = document.getElementById("game16x9");
 
     const W = area.clientWidth;
     const H = area.clientHeight;
 
-    const target = 16/9;
+    const target = 16 / 9;
     const ar = W / H;
 
     let bw, bh;
@@ -127,18 +134,40 @@
     box.style.height = bh + "px";
   }
 
-  window.addEventListener("resize", fitGame);
+  window.addEventListener("resize", fitGame16x9Cover);
 
+  /* ========= 表示切替 ========= */
   function setPlayer(n){
+    if(n < 1 || n > MAX_PLAYERS) return;
     document.getElementById("game").src = viewUrl(n);
     document.getElementById("nameImg").src = plateUrl(n);
+    document.getElementById("nameImg").alt = `P${pad(n)}`;
   }
 
-  fitGame();
-  setPlayer(1);   // 初期表示
+  /* ========= controller.html からの受信 ========= */
+  window.addEventListener("storage", (e) => {
+    if(e.key !== STORAGE_KEY || !e.newValue) return;
+    try{
+      const data = JSON.parse(e.newValue);
+      const n = Number(data.n);
+      if(Number.isFinite(n)) setPlayer(n);
+    }catch(_){}
+  });
+
+  /* ========= 起動時：最後に選ばれた選手を復元 ========= */
+  try{
+    const last = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    if(last && Number.isFinite(last.n)){
+      setPlayer(last.n);
+    }else{
+      setPlayer(1);
+    }
+  }catch(_){
+    setPlayer(1);
+  }
+
+  /* 初期化 */
+  fitGame16x9Cover();
 </script>
 </body>
 </html>
-
-
-
