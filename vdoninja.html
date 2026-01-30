@@ -7,7 +7,7 @@
 <style>
   :root {
     --plateH: 150px;  /* ネームプレート帯の高さ */
-    --gapH: 20px;     /* ★ゲーム下端からネーム帯までの距離（20px） */
+    --gapH: 20px;     /* ★ゲーム下端とネーム画像の距離（空白帯は作らない） */
   }
 
   html, body {
@@ -26,30 +26,28 @@
     height: 100%;
   }
 
-  /* ===== ゲーム映像（ネーム帯+gap分だけ高さを削る） ===== */
+  /* ===== ゲーム映像（下を空けるのは plateH だけ） ===== */
   #game {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: calc(100% - var(--plateH) - var(--gapH));
+    height: calc(100% - var(--plateH));  /* ★gapHは引かない */
     border: none;
   }
 
-  /* ===== ネームプレート帯（ゲーム画面の下端基準で配置） =====
-     gameの下端 = 100% - plateH - gapH
-     ネーム帯の上端 = 100% - plateH
-     → 差分が gapH になる（＝ゲーム下端から20px離れる）
-  */
+  /* ===== ネームプレート帯（帯自体は下に固定、画像だけ上にgap分浮かす） ===== */
   #nameplate {
     position: absolute;
     left: 0;
-    top: calc(100% - var(--plateH));  /* ★ブラウザ下基準ではなく、ゲーム下端からgap分空く配置 */
+    top: calc(100% - var(--plateH));
     width: 100%;
     height: var(--plateH);
     display: flex;
     align-items: flex-end;
     justify-content: center;
+    padding-top: var(--gapH);     /* ★ここで20px離す（空白帯は作らない） */
+    box-sizing: border-box;
     pointer-events: none;
     z-index: 10;
   }
@@ -65,7 +63,7 @@
   /* ===== 操作パネル（運営用：Pキーで表示/非表示・初期は非表示） ===== */
   #controls {
     position: fixed;
-    right: -9999px;        /* ★初期は非表示 */
+    right: -9999px;        /* 初期は非表示 */
     top: 10px;
     z-index: 20;
     background: rgba(0,0,0,0.75);
@@ -138,7 +136,7 @@
     return `overlays/P${pad(n)}.png`;
   }
 
-  /* ===== URLから side を判定（left/rightでラベル色分け） ===== */
+  /* URLから side を判定（left/rightでラベル色分け） */
   const side = (new URLSearchParams(location.search).get("side") || "left").toLowerCase();
   const sideLabel = document.getElementById("sideLabel");
 
@@ -157,7 +155,7 @@
     img.alt = `P${pad(n)}`;
   }
 
-  /* ===== ボタン生成：5列×4行（40人） ===== */
+  /* ボタン生成：5列×4行（40人） */
   const controls = document.getElementById("controls");
   for(let i=1;i<=MAX_PLAYERS;i++){
     const b = document.createElement("button");
@@ -166,7 +164,7 @@
     controls.appendChild(b);
   }
 
-  /* ===== Pキーで表示/非表示（右側）・初期は非表示 ===== */
+  /* Pキーで表示/非表示（右側）・初期は非表示 */
   let controlsVisible = false;
 
   function setControlsVisible(v){
