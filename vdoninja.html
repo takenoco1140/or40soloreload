@@ -6,8 +6,8 @@
 
 <style>
   :root{
-    --plateH: 150px;  /* ネーム帯の高さ */
-    --gapH: 20px;     /* ★ゲーム下端→ネーム帯までの距離（20px固定） */
+    --plateH: 150px;  /* ネーム帯高さ（px固定） */
+    --gapH: 20px;     /* ゲーム下端→ネーム画像までの距離（px固定） */
   }
 
   html, body{
@@ -20,30 +20,29 @@
     font-family:sans-serif;
   }
 
+  /* ★ここが重要：画面を「上=ゲーム」「下=ネーム帯」で確実に分割 */
   #frame{
-    position:relative;
     width:100%;
     height:100%;
+    display:flex;
+    flex-direction:column;
     background:#000;
   }
 
-  /* ===== ゲーム領域：ネーム帯 + gap 分だけ下を空ける ===== */
+  /* ===== ゲーム領域：残り全部 ===== */
   #gameArea{
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height: calc(100% - var(--plateH) - var(--gapH));
+    position:relative;
+    flex: 1 1 auto;
     background:#000;
     overflow:hidden;
   }
 
-  /* 16:9の箱を gameArea の中で cover させる（サイズはJSで決める） */
+  /* 16:9の箱（サイズはJSで cover 計算して入れる） */
   #game16x9{
     position:absolute;
     top:50%;
     left:50%;
-    transform: translate(-50%, -50%);
+    transform:translate(-50%, -50%);
     background:#000;
     overflow:hidden;
   }
@@ -55,24 +54,23 @@
     display:block;
   }
 
-  /* ===== ネーム帯：画面下に固定（gapは上のgameAreaが作ってる） ===== */
+  /* ===== ネーム帯：下固定（基準はframeの下段＝常に正しい） ===== */
   #nameplate{
-    position:absolute;
-    left:0;
-    bottom:0;
-    width:100%;
     height: var(--plateH);
+    background:#000;
     display:flex;
     align-items:flex-end;
     justify-content:center;
     pointer-events:none;
+    position:relative;
     z-index:10;
   }
 
+  /* ★gapは「帯の中の余白」で作る：余計な帯（青斜線領域）を生まない */
   #nameplate img{
-    width:auto;
-    height:auto;
     display:block;
+    margin-bottom: 0;
+    margin-top: var(--gapH);
     transform: scale(0.35);
     transform-origin: bottom center;
   }
@@ -127,7 +125,7 @@
     </div>
   </div>
 
-  <!-- ネームプレート -->
+  <!-- ネームプレート帯 -->
   <div id="nameplate">
     <img id="nameImg" src="" alt="">
   </div>
@@ -152,7 +150,7 @@
     return `overlays/P${pad(n)}.png`;
   }
 
-  // side 判定（ラベル色）
+  // side判定（色分け）
   const side = (new URLSearchParams(location.search).get("side") || "left").toLowerCase();
   const sideLabel = document.getElementById("sideLabel");
   if(side === "right"){
@@ -163,7 +161,7 @@
     sideLabel.style.background = "rgba(21,101,192,0.95)";
   }
 
-  // ===== 16:9を「gameArea基準」で cover させる（黒帯を潰す） =====
+  // ===== 16:9 cover を「gameArea基準」で計算 =====
   function fitGame16x9Cover(){
     const area = document.getElementById("gameArea");
     const box  = document.getElementById("game16x9");
@@ -207,7 +205,7 @@
     controls.appendChild(b);
   }
 
-  // Pキーで表示/非表示（初期は非表示）
+  // Pキーで表示/非表示（初期非表示）
   let controlsVisible = false;
   function setControlsVisible(v){
     controlsVisible = v;
