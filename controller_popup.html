@@ -1,0 +1,116 @@
+<!-- controller_popup.html（操作用：ボタンで親ウィンドウの setPlayer() を呼ぶ） -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>OR40 Controller</title>
+
+<style>
+  html,body{
+    margin:0;
+    padding:0;
+    background:#111;
+    color:#fff;
+    font-family:sans-serif;
+  }
+
+  #wrap{
+    padding:12px;
+  }
+
+  #titleRow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+  }
+
+  h1{
+    font-size:16px;
+    margin:0;
+    font-weight:800;
+  }
+
+  #status{
+    font-size:12px;
+    color:#aaa;
+    text-align:right;
+    white-space:nowrap;
+  }
+
+  #grid{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr); /* 5列×8行 = 40 */
+    gap:8px;
+  }
+
+  button{
+    padding:12px 0;
+    font-size:14px;
+    cursor:pointer;
+    border-radius:10px;
+    border:1px solid #444;
+    background:#222;
+    color:#fff;
+    user-select:none;
+  }
+
+  button:hover{ background:#2b2b2b; }
+
+  #note{
+    margin-top:10px;
+    font-size:12px;
+    color:#888;
+    line-height:1.4;
+  }
+</style>
+</head>
+
+<body>
+<div id="wrap">
+  <div id="titleRow">
+    <h1>OR40 操作パネル</h1>
+    <div id="status">未選択</div>
+  </div>
+
+  <div id="grid"></div>
+
+  <div id="note">
+    親ウィンドウ（表示側）が開いている必要があります。<br>
+    ※ ポップアップがブロックされる場合は許可してください。
+  </div>
+</div>
+
+<script>
+  const MAX = 40;
+
+  function pad(n){ return String(n).padStart(3,"0"); }
+
+  const grid = document.getElementById("grid");
+  const status = document.getElementById("status");
+
+  function send(n){
+    if(window.opener && !window.opener.closed && typeof window.opener.setPlayer === "function"){
+      window.opener.setPlayer(n);
+      status.textContent = `送信: P${pad(n)} (${new Date().toLocaleTimeString()})`;
+    }else{
+      alert("表示側ウィンドウが見つかりません（先に vdoninja_single.html を開いてください）");
+    }
+  }
+
+  for(let i=1;i<=MAX;i++){
+    const b = document.createElement("button");
+    b.textContent = `P${pad(i)}`;
+    b.onclick = ()=>send(i);
+    grid.appendChild(b);
+  }
+
+  // 便利：キーボードでも操作（1-9でP001〜P009、0でP010）
+  document.addEventListener("keydown",(e)=>{
+    if(e.key >= "1" && e.key <= "9") send(Number(e.key));
+    if(e.key === "0") send(10);
+  });
+</script>
+</body>
+</html>
