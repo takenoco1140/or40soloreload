@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>OR40 監視（範囲指定クロップ／オーバーレイUI／スポットライト修正版）</title>
+<title>OR40 SOLOリロード 運営用モニター</title>
 <style>
   :root {
     --bg:#0b0b0f;
@@ -103,6 +103,13 @@
   }
   .badgeBtn:hover { background:rgba(0,0,0,.7); }
   .badgeBtn:active { transform: translateY(1px); }
+
+  .badgeBtn.badgeLbl {
+    cursor: default;
+    pointer-events: none;
+  }
+  .badgeBtn.badgeLbl:hover { background:rgba(0,0,0,.55); }
+  .badgeBtn.badgeLbl:active { transform:none; }
 
   .crop {
     position:absolute;
@@ -281,368 +288,368 @@
     <span class="pill">残り：<span id="remain">40</span></span>
     <button class="btn" id="btnMode" onclick="toggleMode()">表示：HP</button>
     <button class="btn secondary" onclick="openOverlay()">操作（ON/OFF）</button>
-    <span class="pill">スポットライト：各枠左上の <strong>C001</strong> ボタン</span>
+    <span class="pill">ラベル：各枠左上の <strong>C001</strong></span>
   </div>
 
   <div class="gridWrap">
     <div class="grid mode-hp" id="grid">
       
     <div class="tile" id="tile1" data-idx="1">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(1); event.stopPropagation();">C001</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C001</div>
       <div class="crop">
         <div class="inner" id="inner1">
-          <iframe id="frame1" src="https://vdo.ninja/?view=OR40_C001&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame1" src="https://vdo.ninja/?view=OR40_C001&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile2" data-idx="2">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(2); event.stopPropagation();">C002</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C002</div>
       <div class="crop">
         <div class="inner" id="inner2">
-          <iframe id="frame2" src="https://vdo.ninja/?view=OR40_C002&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame2" src="https://vdo.ninja/?view=OR40_C002&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile3" data-idx="3">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(3); event.stopPropagation();">C003</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C003</div>
       <div class="crop">
         <div class="inner" id="inner3">
-          <iframe id="frame3" src="https://vdo.ninja/?view=OR40_C003&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame3" src="https://vdo.ninja/?view=OR40_C003&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile4" data-idx="4">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(4); event.stopPropagation();">C004</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C004</div>
       <div class="crop">
         <div class="inner" id="inner4">
-          <iframe id="frame4" src="https://vdo.ninja/?view=OR40_C004&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame4" src="https://vdo.ninja/?view=OR40_C004&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile5" data-idx="5">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(5); event.stopPropagation();">C005</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C005</div>
       <div class="crop">
         <div class="inner" id="inner5">
-          <iframe id="frame5" src="https://vdo.ninja/?view=OR40_C005&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame5" src="https://vdo.ninja/?view=OR40_C005&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile6" data-idx="6">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(6); event.stopPropagation();">C006</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C006</div>
       <div class="crop">
         <div class="inner" id="inner6">
-          <iframe id="frame6" src="https://vdo.ninja/?view=OR40_C006&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame6" src="https://vdo.ninja/?view=OR40_C006&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile7" data-idx="7">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(7); event.stopPropagation();">C007</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C007</div>
       <div class="crop">
         <div class="inner" id="inner7">
-          <iframe id="frame7" src="https://vdo.ninja/?view=OR40_C007&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame7" src="https://vdo.ninja/?view=OR40_C007&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile8" data-idx="8">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(8); event.stopPropagation();">C008</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C008</div>
       <div class="crop">
         <div class="inner" id="inner8">
-          <iframe id="frame8" src="https://vdo.ninja/?view=OR40_C008&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame8" src="https://vdo.ninja/?view=OR40_C008&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile9" data-idx="9">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(9); event.stopPropagation();">C009</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C009</div>
       <div class="crop">
         <div class="inner" id="inner9">
-          <iframe id="frame9" src="https://vdo.ninja/?view=OR40_C009&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame9" src="https://vdo.ninja/?view=OR40_C009&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile10" data-idx="10">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(10); event.stopPropagation();">C010</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C010</div>
       <div class="crop">
         <div class="inner" id="inner10">
-          <iframe id="frame10" src="https://vdo.ninja/?view=OR40_C010&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame10" src="https://vdo.ninja/?view=OR40_C010&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile11" data-idx="11">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(11); event.stopPropagation();">C011</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C011</div>
       <div class="crop">
         <div class="inner" id="inner11">
-          <iframe id="frame11" src="https://vdo.ninja/?view=OR40_C011&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame11" src="https://vdo.ninja/?view=OR40_C011&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile12" data-idx="12">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(12); event.stopPropagation();">C012</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C012</div>
       <div class="crop">
         <div class="inner" id="inner12">
-          <iframe id="frame12" src="https://vdo.ninja/?view=OR40_C012&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame12" src="https://vdo.ninja/?view=OR40_C012&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile13" data-idx="13">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(13); event.stopPropagation();">C013</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C013</div>
       <div class="crop">
         <div class="inner" id="inner13">
-          <iframe id="frame13" src="https://vdo.ninja/?view=OR40_C013&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame13" src="https://vdo.ninja/?view=OR40_C013&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile14" data-idx="14">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(14); event.stopPropagation();">C014</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C014</div>
       <div class="crop">
         <div class="inner" id="inner14">
-          <iframe id="frame14" src="https://vdo.ninja/?view=OR40_C014&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame14" src="https://vdo.ninja/?view=OR40_C014&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile15" data-idx="15">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(15); event.stopPropagation();">C015</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C015</div>
       <div class="crop">
         <div class="inner" id="inner15">
-          <iframe id="frame15" src="https://vdo.ninja/?view=OR40_C015&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame15" src="https://vdo.ninja/?view=OR40_C015&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile16" data-idx="16">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(16); event.stopPropagation();">C016</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C016</div>
       <div class="crop">
         <div class="inner" id="inner16">
-          <iframe id="frame16" src="https://vdo.ninja/?view=OR40_C016&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame16" src="https://vdo.ninja/?view=OR40_C016&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile17" data-idx="17">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(17); event.stopPropagation();">C017</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C017</div>
       <div class="crop">
         <div class="inner" id="inner17">
-          <iframe id="frame17" src="https://vdo.ninja/?view=OR40_C017&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame17" src="https://vdo.ninja/?view=OR40_C017&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile18" data-idx="18">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(18); event.stopPropagation();">C018</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C018</div>
       <div class="crop">
         <div class="inner" id="inner18">
-          <iframe id="frame18" src="https://vdo.ninja/?view=OR40_C018&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame18" src="https://vdo.ninja/?view=OR40_C018&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile19" data-idx="19">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(19); event.stopPropagation();">C019</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C019</div>
       <div class="crop">
         <div class="inner" id="inner19">
-          <iframe id="frame19" src="https://vdo.ninja/?view=OR40_C019&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame19" src="https://vdo.ninja/?view=OR40_C019&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile20" data-idx="20">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(20); event.stopPropagation();">C020</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C020</div>
       <div class="crop">
         <div class="inner" id="inner20">
-          <iframe id="frame20" src="https://vdo.ninja/?view=OR40_C020&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame20" src="https://vdo.ninja/?view=OR40_C020&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile21" data-idx="21">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(21); event.stopPropagation();">C021</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C021</div>
       <div class="crop">
         <div class="inner" id="inner21">
-          <iframe id="frame21" src="https://vdo.ninja/?view=OR40_C021&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame21" src="https://vdo.ninja/?view=OR40_C021&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile22" data-idx="22">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(22); event.stopPropagation();">C022</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C022</div>
       <div class="crop">
         <div class="inner" id="inner22">
-          <iframe id="frame22" src="https://vdo.ninja/?view=OR40_C022&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame22" src="https://vdo.ninja/?view=OR40_C022&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile23" data-idx="23">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(23); event.stopPropagation();">C023</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C023</div>
       <div class="crop">
         <div class="inner" id="inner23">
-          <iframe id="frame23" src="https://vdo.ninja/?view=OR40_C023&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame23" src="https://vdo.ninja/?view=OR40_C023&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile24" data-idx="24">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(24); event.stopPropagation();">C024</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C024</div>
       <div class="crop">
         <div class="inner" id="inner24">
-          <iframe id="frame24" src="https://vdo.ninja/?view=OR40_C024&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame24" src="https://vdo.ninja/?view=OR40_C024&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile25" data-idx="25">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(25); event.stopPropagation();">C025</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C025</div>
       <div class="crop">
         <div class="inner" id="inner25">
-          <iframe id="frame25" src="https://vdo.ninja/?view=OR40_C025&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame25" src="https://vdo.ninja/?view=OR40_C025&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile26" data-idx="26">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(26); event.stopPropagation();">C026</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C026</div>
       <div class="crop">
         <div class="inner" id="inner26">
-          <iframe id="frame26" src="https://vdo.ninja/?view=OR40_C026&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame26" src="https://vdo.ninja/?view=OR40_C026&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile27" data-idx="27">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(27); event.stopPropagation();">C027</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C027</div>
       <div class="crop">
         <div class="inner" id="inner27">
-          <iframe id="frame27" src="https://vdo.ninja/?view=OR40_C027&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame27" src="https://vdo.ninja/?view=OR40_C027&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile28" data-idx="28">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(28); event.stopPropagation();">C028</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C028</div>
       <div class="crop">
         <div class="inner" id="inner28">
-          <iframe id="frame28" src="https://vdo.ninja/?view=OR40_C028&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame28" src="https://vdo.ninja/?view=OR40_C028&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile29" data-idx="29">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(29); event.stopPropagation();">C029</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C029</div>
       <div class="crop">
         <div class="inner" id="inner29">
-          <iframe id="frame29" src="https://vdo.ninja/?view=OR40_C029&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame29" src="https://vdo.ninja/?view=OR40_C029&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile30" data-idx="30">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(30); event.stopPropagation();">C030</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C030</div>
       <div class="crop">
         <div class="inner" id="inner30">
-          <iframe id="frame30" src="https://vdo.ninja/?view=OR40_C030&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame30" src="https://vdo.ninja/?view=OR40_C030&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile31" data-idx="31">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(31); event.stopPropagation();">C031</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C031</div>
       <div class="crop">
         <div class="inner" id="inner31">
-          <iframe id="frame31" src="https://vdo.ninja/?view=OR40_C031&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame31" src="https://vdo.ninja/?view=OR40_C031&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile32" data-idx="32">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(32); event.stopPropagation();">C032</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C032</div>
       <div class="crop">
         <div class="inner" id="inner32">
-          <iframe id="frame32" src="https://vdo.ninja/?view=OR40_C032&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame32" src="https://vdo.ninja/?view=OR40_C032&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile33" data-idx="33">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(33); event.stopPropagation();">C033</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C033</div>
       <div class="crop">
         <div class="inner" id="inner33">
-          <iframe id="frame33" src="https://vdo.ninja/?view=OR40_C033&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame33" src="https://vdo.ninja/?view=OR40_C033&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile34" data-idx="34">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(34); event.stopPropagation();">C034</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C034</div>
       <div class="crop">
         <div class="inner" id="inner34">
-          <iframe id="frame34" src="https://vdo.ninja/?view=OR40_C034&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame34" src="https://vdo.ninja/?view=OR40_C034&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile35" data-idx="35">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(35); event.stopPropagation();">C035</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C035</div>
       <div class="crop">
         <div class="inner" id="inner35">
-          <iframe id="frame35" src="https://vdo.ninja/?view=OR40_C035&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame35" src="https://vdo.ninja/?view=OR40_C035&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile36" data-idx="36">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(36); event.stopPropagation();">C036</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C036</div>
       <div class="crop">
         <div class="inner" id="inner36">
-          <iframe id="frame36" src="https://vdo.ninja/?view=OR40_C036&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame36" src="https://vdo.ninja/?view=OR40_C036&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile37" data-idx="37">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(37); event.stopPropagation();">C037</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C037</div>
       <div class="crop">
         <div class="inner" id="inner37">
-          <iframe id="frame37" src="https://vdo.ninja/?view=OR40_C037&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame37" src="https://vdo.ninja/?view=OR40_C037&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile38" data-idx="38">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(38); event.stopPropagation();">C038</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C038</div>
       <div class="crop">
         <div class="inner" id="inner38">
-          <iframe id="frame38" src="https://vdo.ninja/?view=OR40_C038&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame38" src="https://vdo.ninja/?view=OR40_C038&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile39" data-idx="39">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(39); event.stopPropagation();">C039</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C039</div>
       <div class="crop">
         <div class="inner" id="inner39">
-          <iframe id="frame39" src="https://vdo.ninja/?view=OR40_C039&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame39" src="https://vdo.ninja/?view=OR40_C039&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
     
     <div class="tile" id="tile40" data-idx="40">
-      <button class="badgeBtn" title="スポットライト（拡大）" onclick="openSpotlight(40); event.stopPropagation();">C040</button>
+      <div class="badgeBtn badgeLbl" aria-hidden="true">C040</div>
       <div class="crop">
         <div class="inner" id="inner40">
-          <iframe id="frame40" src="https://vdo.ninja/?view=OR40_C040&cleanoutput&mute" allow="autoplay; display-capture"></iframe>
+          <iframe id="frame40" src="https://vdo.ninja/?view=OR40_C040&cleanoutput&viewwidth=256&viewheight=144&mute" allow="autoplay; display-capture"></iframe>
         </div>
       </div>
     </div>
@@ -779,12 +786,12 @@
     if(!tile || !num) return;
     tile.classList.toggle('hidden', !on);
     num.classList.toggle('off', !on);
-    updateLayout();
+    updateLayout(); updateIframeResolution();
   }
   function toggleOne(idx){
     const tile = document.getElementById('tile'+idx);
     const turningOn = tile.classList.contains('hidden');
-    setVisible(idx, turningOn);
+    setVisible(idx, turningOn); updateIframeResolution();
   }
   function showAll(){ for(let i=1;i<=total;i++) setVisible(i, true); }
   function hideAll(){ for(let i=1;i<=total;i++) setVisible(i, false); }
@@ -814,6 +821,7 @@
 
   // Spotlight
   function openSpotlight(idx){
+    return; // スポット表示を中止
     if(document.getElementById('overlay').classList.contains('open')) return;
     spotIdx = idx;
     const cid = 'C' + String(idx).padStart(3,'0');
@@ -821,7 +829,7 @@
 
     // stream URL (mute default)
     const f = document.getElementById('spotFrame');
-    const base = 'https://vdo.ninja/?view=OR40_C' + String(idx).padStart(3,'0') + '&cleanoutput';
+    const base = 'https://vdo.ninja/?view=OR40_C' + String(idx).padStart(3,'0') + '&cleanoutput&viewwidth=256&viewheight=144';
     f.src = base + '&mute';
     document.getElementById('spotAudio').checked = false;
 
@@ -949,9 +957,31 @@
   });
   ro.observe(document.body);
 
+  
+  function calcViewSize(){
+    const tiles = Array.from(document.querySelectorAll('.tile')).filter(t=>!t.classList.contains('hidden'));
+    if(tiles.length === 0) return {w:256,h:144};
+    const r = tiles[0].getBoundingClientRect();
+    const w = Math.max(120, Math.floor(r.width));
+    const h = Math.max(68, Math.floor(r.height));
+    return {w,h};
+  }
+
+  function updateIframeResolution(){
+    const {w,h} = calcViewSize();
+    document.querySelectorAll('iframe').forEach(f=>{
+      if(!f.src.includes('vdo.ninja')) return;
+      const u = new URL(f.src);
+      u.searchParams.set('viewwidth', w);
+      u.searchParams.set('viewheight', h);
+      f.src = u.toString();
+    });
+  }
+
+
   // init
   applyMode();
-  updateLayout();
+  updateLayout(); updateIframeResolution();
 </script>
 </body>
 </html>
