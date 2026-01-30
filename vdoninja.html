@@ -7,7 +7,7 @@
 <style>
   :root {
     --plateH: 150px;  /* ネームプレート帯の高さ */
-    --gapH: 10px;     /* ゲームとネームプレートの隙間 */
+    --gapH: 20px;     /* ★ゲーム下端からネーム帯までの距離（20px） */
   }
 
   html, body {
@@ -26,7 +26,7 @@
     height: 100%;
   }
 
-  /* ===== ゲーム映像（下を空ける） ===== */
+  /* ===== ゲーム映像（ネーム帯+gap分だけ高さを削る） ===== */
   #game {
     position: absolute;
     top: 0;
@@ -36,14 +36,17 @@
     border: none;
   }
 
-  /* ===== ネームプレート帯 ===== */
+  /* ===== ネームプレート帯（ゲーム画面の下端基準で配置） =====
+     gameの下端 = 100% - plateH - gapH
+     ネーム帯の上端 = 100% - plateH
+     → 差分が gapH になる（＝ゲーム下端から20px離れる）
+  */
   #nameplate {
     position: absolute;
     left: 0;
-    bottom: 0;
+    top: calc(100% - var(--plateH));  /* ★ブラウザ下基準ではなく、ゲーム下端からgap分空く配置 */
     width: 100%;
     height: var(--plateH);
-    padding-top: var(--gapH);
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -59,10 +62,10 @@
     transform-origin: bottom center;
   }
 
-  /* ===== 操作ボタン（右上） ===== */
+  /* ===== 操作パネル（運営用：Pキーで表示/非表示・初期は非表示） ===== */
   #controls {
     position: fixed;
-    right: 10px;      /* ★常時表示にするならここ固定でOK */
+    right: -9999px;        /* ★初期は非表示 */
     top: 10px;
     z-index: 20;
     background: rgba(0,0,0,0.75);
@@ -135,16 +138,16 @@
     return `overlays/P${pad(n)}.png`;
   }
 
-  /* ===== URLから side を判定 ===== */
+  /* ===== URLから side を判定（left/rightでラベル色分け） ===== */
   const side = (new URLSearchParams(location.search).get("side") || "left").toLowerCase();
   const sideLabel = document.getElementById("sideLabel");
 
   if (side === "right") {
     sideLabel.textContent = "RIGHT";
-    sideLabel.style.background = "rgba(198,40,40,0.95)";  // 赤系
+    sideLabel.style.background = "rgba(198,40,40,0.95)";
   } else {
     sideLabel.textContent = "LEFT";
-    sideLabel.style.background = "rgba(21,101,192,0.95)"; // 青系
+    sideLabel.style.background = "rgba(21,101,192,0.95)";
   }
 
   function setPlayer(n){
@@ -163,27 +166,20 @@
     controls.appendChild(b);
   }
 
-  /* ===== Pキーで表示/非表示（必要なら有効化） =====
-     いま「この位置なら常時表示でも良い」って話なので、
-     まず常時表示にしてある（CSS right:10px 固定）。
-     Pキーで隠したいなら、下のブロックをONにして、
-     CSSの #controls の right:10px を right:-9999px に戻して。
-  */
+  /* ===== Pキーで表示/非表示（右側）・初期は非表示 ===== */
+  let controlsVisible = false;
 
-  /*
-  let controlsVisible = true;
   function setControlsVisible(v){
     controlsVisible = v;
     controls.style.right = controlsVisible ? "10px" : "-9999px";
   }
-  setControlsVisible(true);
+  setControlsVisible(false);
 
   document.addEventListener("keydown", (e)=>{
     if(e.key.toLowerCase()==="p"){
       setControlsVisible(!controlsVisible);
     }
   });
-  */
 
   /* 初期表示 */
   setPlayer(1);
