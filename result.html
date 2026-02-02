@@ -6,43 +6,53 @@
 <title>OR40 RESULT</title>
 
 <style>
-/* ===== 固定前提 ===== */
+/* =========================
+   固定パラメータ
+   ========================= */
 :root{
   --w: 1920px;
-  --h: 4615px; /* 順位表画像の実高さに合わせる */
+  --h: 4615px;        /* rank.png の実高さ */
+  --scale: 0.234;    /* 1080 / 4615 = 0.234 */
 }
 
-/* ===== ベース ===== */
+/* =========================
+   ベース
+   ========================= */
 body{
   margin: 0;
   background: #000;
-  overflow-x: hidden;
+  overflow: hidden;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* 縦スクロール領域 */
+/* 表示領域（OBS 1920×1080） */
 .viewport{
-  width: var(--w);
-  height: 100vh;
+  width: 1920px;
+  height: 1080px;
   margin: 0 auto;
-  overflow-y: auto;
   position: relative;
+  overflow: hidden;
 }
 
-/* 順位表 */
+/* 中身（実サイズ基準） */
 .board{
   position: relative;
   width: var(--w);
   height: var(--h);
+  transform: scale(var(--scale));
+  transform-origin: top left;
 }
 
+/* 順位表画像 */
 .board-img{
   width: var(--w);
   height: var(--h);
   display: block;
 }
 
-/* ===== 帯（1～10位） ===== */
+/* =========================
+   帯（1～10位）
+   ========================= */
 .cover{
   position: absolute;
   left: 0;
@@ -51,7 +61,7 @@ body{
   padding: 0;
   cursor: pointer;
 
-  background-image: url("bg.png");
+  background-image: url("result/bg.png");
   background-repeat: no-repeat;
   background-size: var(--w) var(--h);
 
@@ -63,12 +73,14 @@ body{
   pointer-events: none;
 }
 
-/* ===== ジャンプボタン ===== */
+/* =========================
+   ジャンプボタン
+   ========================= */
 .jump-nav{
-  position: fixed;
+  position: absolute;
   top: 12px;
   left: 12px;
-  z-index: 999;
+  z-index: 1000;
 }
 
 .jump-nav button{
@@ -85,21 +97,21 @@ body{
 
 <body>
 
-<!-- ジャンプボタン -->
-<div class="jump-nav">
-  <button data-jump="pos11">11位～</button>
-  <button data-jump="pos21">21位～</button>
-  <button data-jump="pos31">31位～</button>
-</div>
-
 <div class="viewport" id="viewport">
-  <div class="board">
 
-    <!-- 順位表（1枚） -->
+  <!-- ジャンプボタン -->
+  <div class="jump-nav">
+    <button data-jump="pos11">11位～</button>
+    <button data-jump="pos21">21位～</button>
+    <button data-jump="pos31">31位～</button>
+  </div>
+
+  <div class="board" id="board">
+
+    <!-- 順位表 -->
     <img class="board-img" src="result/rank.png" alt="順位表">
 
     <!-- ===== 1～10位 帯 ===== -->
-    <!-- ※数値は画像から拾った想定。ズレたらここだけ直す -->
     <button class="cover" style="top:408px; height:77px;"></button>
     <button class="cover" style="top:491px; height:77px;"></button>
     <button class="cover" style="top:575px; height:77px;"></button>
@@ -111,7 +123,7 @@ body{
     <button class="cover" style="top:1075px; height:74px;"></button>
     <button class="cover" style="top:1158px; height:74px;"></button>
 
-    <!-- ===== ジャンプ位置（透明アンカー） ===== -->
+    <!-- ===== ジャンプ先（実座標） ===== -->
     <div id="pos11" style="position:absolute; top:1350px;"></div>
     <div id="pos21" style="position:absolute; top:2650px;"></div>
     <div id="pos31" style="position:absolute; top:3950px;"></div>
@@ -120,22 +132,28 @@ body{
 </div>
 
 <script>
-/* 帯：背景位置合わせ＋オープン */
+/* =========================
+   帯：背景位置合わせ
+   ========================= */
 document.querySelectorAll('.cover').forEach(c=>{
   const top = parseFloat(getComputedStyle(c).top);
   c.style.backgroundPosition = `0px ${-top}px`;
   c.addEventListener('click', ()=> c.classList.add('open'));
 });
 
-/* ジャンプ */
+/* =========================
+   ジャンプ（scale補正込み）
+   ========================= */
 const viewport = document.getElementById('viewport');
+const board   = document.getElementById('board');
+const scale   = parseFloat(getComputedStyle(document.documentElement)
+                  .getPropertyValue('--scale'));
+
 document.querySelectorAll('.jump-nav button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const target = document.getElementById(btn.dataset.jump);
-    viewport.scrollTo({
-      top: target.offsetTop,
-      behavior: 'auto' // smooth にしたければ 'smooth'
-    });
+    const y = target.offsetTop * scale;
+    viewport.scrollTo({ top: y, behavior: 'auto' });
   });
 });
 </script>
