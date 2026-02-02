@@ -5,331 +5,231 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Final Results Overlay</title>
 <style>
-  html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden}
-  body{display:flex;justify-content:center;align-items:center;font-family:"Segoe UI","Noto Sans JP",system-ui,sans-serif;user-select:none}
+  html,body{
+    margin:0;padding:0;width:100%;height:100%;
+    background:#000;
+    /* これが原因で fixed が見切れる環境があるので、ここは hidden をやめる */
+    overflow:visible;
+  }
+  body{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family:"Segoe UI","Noto Sans JP",system-ui,sans-serif;
+    user-select:none;
+  }
 
   /* === 台紙 === */
   .board{
-    position:relative;width:1920px;height:1080px;
+    position:relative;
+    width:1920px;height:1080px;
     background:url("./result/総合結果台紙.jpg") center/contain no-repeat;
-    background-color:#000;color:#fff;
+    background-color:#000;
+    color:#fff;
+    z-index:1;
   }
 
   .text{position:absolute;text-align:center;text-shadow:0 2px 6px rgba(0,0,0,.8)}
-  .rank{width:520px;pointer-events:none}
+  .hidden{display:none!important}
 
-  .rank .place{font-size:40px;font-weight:800;margin-bottom:6px;letter-spacing:.04em}
-  /* 名前は「高さ固定」でレイアウトを崩さない */
+  .rank{width:520px}
+  .rank .place{font-size:40px;font-weight:800;margin-bottom:6px}
   .rank .nameimg{
     display:block;margin:0 auto;
     height:96px;width:auto;max-width:520px;
     object-fit:contain;
     filter:drop-shadow(0 3px 10px rgba(0,0,0,.75));
-    opacity:1;
+    opacity:0;
   }
   .rank .scoreline{margin-top:10px;font-size:30px;font-weight:700;white-space:nowrap}
-
-  /* レイアウト固定のため display:none ではなく visibility */
-  .vhidden{visibility:hidden !important;}
-  .ohidden{opacity:0 !important;} /* 画像未設定時は透明 */
 
   .first{top:580px;left:50%;transform:translateX(-50%)}
   .second{top:650px;left:320px}
   .third{top:650px;right:320px}
   .first .place{color:#ffd966}.second .place{color:#9fe8d5}.third .place{color:#ffb07c}
 
-  /* === MVP（最多撃破賞） === */
-  .mvp{
-    position:absolute;top:380px;left:50%;transform:translateX(-50%);
-    text-align:center;pointer-events:none;
-  }
+  /* MVP */
+  .mvp{position:absolute;top:380px;left:50%;transform:translateX(-50%);text-align:center}
   .mvp .row{display:flex;align-items:center;justify-content:center;gap:14px}
-  .mvp img{height:90px;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(0,0,0,.75))}
+  .mvp img{height:90px;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(0,0,0,.75));opacity:0}
   .mvp .kills{margin-top:6px;font-size:28px;font-weight:800}
-  .mvp.hidden{visibility:hidden;} /* 位置保持のまま消す */
 
-  /* 操作ボタン（ポップアップ） */
-  #openPanel{
-    position:absolute;top:16px;right:16px;z-index:10;
-    appearance:none;border:0;border-radius:10px;padding:8px 10px;
-    font-size:13px;font-weight:900;cursor:pointer;
-    background:rgba(255,255,255,0.12);color:#fff;
+  /* =========================
+     操作パネル（右側固定）
+     重要：z-index を付けて「必ず最前面」にする
+     ========================= */
+  .controls{
+    position:fixed;
+    top:0;right:0;
+    width:360px;height:100vh;
+    background:rgba(0,0,0,.72);
+    border-left:1px solid rgba(255,255,255,.15);
+    padding:14px;
+    box-sizing:border-box;
+    color:#fff;
+    z-index:9999;                 /* ←これがないと見えない/押せない環境がある */
     pointer-events:auto;
+    overflow:auto;
   }
-  #openPanel:hover{background:rgba(255,255,255,0.18)}
+
+  .panel{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:12px
+  }
+  .panel h3{margin:0 0 8px;font-size:13px;font-weight:900}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    appearance:none;border:0;border-radius:10px;
+    padding:8px 10px;font-size:12px;font-weight:900;
+    cursor:pointer;background:rgba(255,255,255,.12);color:#fff
+  }
+  .btn:hover{background:rgba(255,255,255,.18)}
+  .btn.primary{background:rgba(255,255,255,.22)}
+  .btn.danger{background:rgba(255,90,90,.3)}
+  .grid40{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
+  input{
+    width:100%;
+    padding:6px;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,.2);
+    background:#000;
+    color:#fff;
+    font-weight:800;
+    box-sizing:border-box;
+  }
+  hr{border:0;border-top:1px solid rgba(255,255,255,.12);margin:10px 0}
 </style>
 </head>
 <body>
+
 <div class="board">
-
-  <button id="openPanel">操作</button>
-
-  <!-- 1位 -->
   <div id="rank1" class="text rank first">
     <div class="place">1st</div>
-    <img id="img1" class="nameimg ohidden" alt="1st name">
-    <div id="score1" class="scoreline vhidden">総合 0pt（順位 0pt、撃破 0pt）</div>
+    <img id="img1" class="nameimg" alt="1st name">
+    <div id="score1" class="scoreline"></div>
   </div>
 
-  <!-- 2位 -->
   <div id="rank2" class="text rank second">
     <div class="place">2nd</div>
-    <img id="img2" class="nameimg ohidden" alt="2nd name">
-    <div id="score2" class="scoreline vhidden">総合 0pt（順位 0pt、撃破 0pt）</div>
+    <img id="img2" class="nameimg" alt="2nd name">
+    <div id="score2" class="scoreline"></div>
   </div>
 
-  <!-- 3位 -->
   <div id="rank3" class="text rank third">
     <div class="place">3rd</div>
-    <img id="img3" class="nameimg ohidden" alt="3rd name">
-    <div id="score3" class="scoreline vhidden">総合 0pt（順位 0pt、撃破 0pt）</div>
+    <img id="img3" class="nameimg" alt="3rd name">
+    <div id="score3" class="scoreline"></div>
   </div>
 
-  <!-- MVP（アイコン固定：./result/mostelim.png） -->
   <div id="mvp" class="mvp hidden">
     <div class="row">
-      <img id="mvpIcon" alt="most elim icon">
-      <img id="mvpImg" alt="mvp name" class="ohidden">
+      <img src="./result/mostelim.png" style="opacity:1" alt="most elim icon">
+      <img id="mvpImg" alt="mvp name">
     </div>
-    <div id="mvpKills" class="kills">最多撃破 0</div>
+    <div id="mvpKills" class="kills"></div>
   </div>
-
 </div>
 
-<script>
-  // ===== パス（GitHub Pages想定） =====
-  const BASE_PATH = "./name";                 // N001.png〜N040.png
-  const MVP_ICON_SRC = "./result/mostelim.png"; // 固定
-
-  // ===== 参照 =====
-  const imgEls = {1: img1, 2: img2, 3: img3};
-  const scoreEls = {1: score1, 2: score2, 3: score3};
-
-  // ===== ユーティリティ =====
-  function pad3(n){ return String(n).padStart(3, "0"); }
-  function nameSrc(n){ return encodeURI(`${BASE_PATH}/N${pad3(n)}.png`); }
-
-  function setImg(el, src){
-    el.onload = () => { el.classList.remove("ohidden"); };
-    el.onerror = () => { el.classList.add("ohidden"); };
-    el.src = src;
-  }
-
-  // ===== 表示制御（レイアウト固定：visibilityでON/OFF） =====
-  function setNameVisible(rank, on){
-    imgEls[rank].classList.toggle("vhidden", !on);
-  }
-  function setPtVisible(rank, on){
-    scoreEls[rank].classList.toggle("vhidden", !on);
-  }
-  function setBothVisible(rank, on){
-    setNameVisible(rank, on);
-    setPtVisible(rank, on);
-  }
-
-  // ===== 反映 =====
-  function setName(rank, n){
-    setImg(imgEls[rank], nameSrc(n));
-    // 反映したら「名前ON」にする（ユーザー操作に沿う）
-    setNameVisible(rank, true);
-  }
-
-  function setPoints(rank, rankPt, elimPt){
-    rankPt = Number(rankPt) || 0;
-    elimPt = Number(elimPt) || 0;
-    const total = rankPt + elimPt;
-    scoreEls[rank].innerHTML = `総合 ${total}pt（順位 ${rankPt}pt、撃破 ${elimPt}pt）`;
-    // 反映したら「pt ON」にする
-    setPtVisible(rank, true);
-  }
-
-  // ===== 全オフ =====
-  function allOff(){
-    for(const r of [1,2,3]) setBothVisible(r, false);
-    setMVPVisible(false);
-  }
-
-  // ===== MVP =====
-  mvpIcon.src = encodeURI(MVP_ICON_SRC);
-
-  function setMVPVisible(on){
-    mvp.classList.toggle("hidden", !on);
-  }
-
-  function setMVP(n, kills){
-    setMVPVisible(true);
-    setImg(mvpImg, nameSrc(n));
-    mvpKills.textContent = `最多撃破 ${Number(kills)||0}`;
-  }
-
-  // ===== 名前ボタン割当（押した順に 1→2→3） =====
-  const ORDER = [1,2,3];
-  let assignIndex = 0;
-  function resetAssign(){ assignIndex = 0; }
-  function assignNumber(n){
-    const target = ORDER[Math.min(assignIndex, ORDER.length-1)];
-    setName(target, n);
-    if(assignIndex < ORDER.length-1) assignIndex++;
-  }
-
-  // ===== 操作パネル（別窓） =====
-  let win;
-
-  function openPanel(){
-    if(win && !win.closed){ win.focus(); return; }
-
-    win = window.open("", "OR40_Result_Panel", "width=980,height=860,resizable=yes,scrollbars=yes");
-    if(!win){ alert("ポップアップがブロックされました。許可してください。"); return; }
-
-    win.document.open();
-    win.document.write(panelHtml());
-    win.document.close();
-    win.focus();
-  }
-
-  document.getElementById("openPanel").addEventListener("click", openPanel);
-
-  // opener から触る用
-  window.__OR40 = {
-    allOff,
-    setNameVisible,
-    setPtVisible,
-    setBothVisible,
-    resetAssign,
-    assignNumber,
-    setPoints,
-    setMVPVisible,
-    setMVP
-  };
-
-  function panelHtml(){
-    return `<!DOCTYPE html>
-<html lang="ja"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>操作パネル</title>
-<style>
-  html,body{margin:0;padding:0;background:#0f0f0f;color:#fff;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif}
-  .wrap{padding:16px}
-  h2{margin:0 0 10px;font-size:16px;font-weight:900}
-  .panel{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px;margin-bottom:12px}
-  .panel h3{margin:0 0 8px;font-size:13px;font-weight:900}
-  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .btn{appearance:none;border:0;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:900;cursor:pointer;background:rgba(255,255,255,0.12);color:#fff}
-  .btn:hover{background:rgba(255,255,255,0.18)}
-  .btn.primary{background:rgba(255,255,255,0.20)}
-  .btn.danger{background:rgba(255,90,90,0.28)}
-  .hint{font-size:11px;opacity:.75;line-height:1.35;margin-top:6px}
-  .badge{font-size:12px;font-weight:900;opacity:.85}
-  .grid40{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;margin-top:8px}
-  .grid40 .btn{padding:7px 0}
-  .field{display:grid;grid-template-columns:auto 1fr;gap:8px 8px;align-items:center}
-  label{font-size:11px;opacity:.85;white-space:nowrap}
-  input[type="number"]{width:100%;padding:7px 8px;border-radius:9px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.28);color:#fff;font-weight:800;outline:none;box-sizing:border-box}
-</style></head>
-<body>
-<div class="wrap">
-  <div class="row" style="justify-content:space-between;margin-bottom:10px;">
-    <h2 style="margin:0;">操作パネル（別窓）</h2>
-    <button class="btn danger" onclick="window.close()">閉じる</button>
-  </div>
-
+<!-- 操作パネル -->
+<div class="controls" id="controls">
   <div class="panel">
-    <h3>表示（全オフからの運用）</h3>
+    <h3>表示切替</h3>
     <div class="row">
-      <button class="btn danger" onclick="opener.__OR40.allOff()">全オフ</button>
-      <button class="btn primary" onclick="opener.__OR40.resetAssign()">名前割当リセット</button>
-    </div>
-    <div class="hint">
-      全オフ → <b>pt</b>でptのみON → <b>名前</b>で名前追加ON。<br>
-      全オフ → <b>同時</b>で同時ON。<br>
-      ※名前OFF/ptONでもptの位置は変わらない（visibility運用）。
+      <button class="btn primary" onclick="allOff()">全OFF</button>
+      <button class="btn" onclick="togglePt()">pt</button>
+      <button class="btn" onclick="toggleName()">名前</button>
+      <button class="btn" onclick="toggleBoth()">同時</button>
     </div>
   </div>
 
   <div class="panel">
-    <h3>順位別：ON/OFF</h3>
-    <div class="row"><span class="badge">1位</span>
-      <button class="btn primary" onclick="opener.__OR40.setPtVisible(1,true)">pt ON</button>
-      <button class="btn" onclick="opener.__OR40.setPtVisible(1,false)">pt OFF</button>
-      <button class="btn primary" onclick="opener.__OR40.setNameVisible(1,true)">名前 ON</button>
-      <button class="btn" onclick="opener.__OR40.setNameVisible(1,false)">名前 OFF</button>
-      <button class="btn primary" onclick="opener.__OR40.setBothVisible(1,true)">同時 ON</button>
-      <button class="btn" onclick="opener.__OR40.setBothVisible(1,false)">同時 OFF</button>
-    </div>
-    <div class="row" style="margin-top:6px;"><span class="badge">2位</span>
-      <button class="btn primary" onclick="opener.__OR40.setPtVisible(2,true)">pt ON</button>
-      <button class="btn" onclick="opener.__OR40.setPtVisible(2,false)">pt OFF</button>
-      <button class="btn primary" onclick="opener.__OR40.setNameVisible(2,true)">名前 ON</button>
-      <button class="btn" onclick="opener.__OR40.setNameVisible(2,false)">名前 OFF</button>
-      <button class="btn primary" onclick="opener.__OR40.setBothVisible(2,true)">同時 ON</button>
-      <button class="btn" onclick="opener.__OR40.setBothVisible(2,false)">同時 OFF</button>
-    </div>
-    <div class="row" style="margin-top:6px;"><span class="badge">3位</span>
-      <button class="btn primary" onclick="opener.__OR40.setPtVisible(3,true)">pt ON</button>
-      <button class="btn" onclick="opener.__OR40.setPtVisible(3,false)">pt OFF</button>
-      <button class="btn primary" onclick="opener.__OR40.setNameVisible(3,true)">名前 ON</button>
-      <button class="btn" onclick="opener.__OR40.setNameVisible(3,false)">名前 OFF</button>
-      <button class="btn primary" onclick="opener.__OR40.setBothVisible(3,true)">同時 ON</button>
-      <button class="btn" onclick="opener.__OR40.setBothVisible(3,false)">同時 OFF</button>
-    </div>
-  </div>
-
-  <div class="panel">
-    <h3>名前画像（押した順に 1→2→3）</h3>
+    <h3>名前画像（押した順に1→2→3）</h3>
     <div class="grid40" id="grid40"></div>
   </div>
 
   <div class="panel">
-    <h3>ポイント入力</h3>
-    <div class="field">
-      <label>1位 順位</label><input id="p1r" type="number" min="0" value="0">
-      <label>1位 撃破</label><input id="p1k" type="number" min="0" value="0">
-      <label>2位 順位</label><input id="p2r" type="number" min="0" value="0">
-      <label>2位 撃破</label><input id="p2k" type="number" min="0" value="0">
-      <label>3位 順位</label><input id="p3r" type="number" min="0" value="0">
-      <label>3位 撃破</label><input id="p3k" type="number" min="0" value="0">
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <button class="btn primary" onclick="opener.__OR40.setPoints(1,Number(p1r.value||0),Number(p1k.value||0))">1位反映</button>
-      <button class="btn primary" onclick="opener.__OR40.setPoints(2,Number(p2r.value||0),Number(p2k.value||0))">2位反映</button>
-      <button class="btn primary" onclick="opener.__OR40.setPoints(3,Number(p3r.value||0),Number(p3k.value||0))">3位反映</button>
-    </div>
+    <h3>ポイント</h3>
+
+    <label>1位 順位</label><input id="p1r" type="number" value="0">
+    <label>1位 撃破</label><input id="p1k" type="number" value="0">
+    <button class="btn primary" onclick="applyPoints(1)">1位反映</button>
+
+    <hr>
+
+    <label>2位 順位</label><input id="p2r" type="number" value="0">
+    <label>2位 撃破</label><input id="p2k" type="number" value="0">
+    <button class="btn primary" onclick="applyPoints(2)">2位反映</button>
+
+    <hr>
+
+    <label>3位 順位</label><input id="p3r" type="number" value="0">
+    <label>3位 撃破</label><input id="p3k" type="number" value="0">
+    <button class="btn primary" onclick="applyPoints(3)">3位反映</button>
   </div>
 
   <div class="panel">
     <h3>MVP（最多撃破賞）</h3>
     <div class="row">
-      <button class="btn primary" onclick="opener.__OR40.setMVPVisible(true)">MVP ON</button>
-      <button class="btn danger" onclick="opener.__OR40.setMVPVisible(false)">MVP OFF</button>
+      <button class="btn primary" onclick="mvpOn()">ON</button>
+      <button class="btn danger" onclick="mvpOff()">OFF</button>
     </div>
-    <div class="field" style="margin-top:10px;">
-      <label>番号</label><input id="mn" type="number" min="1" max="40" value="1">
-      <label>撃破数</label><input id="mk" type="number" min="0" value="0">
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <button class="btn primary" onclick="opener.__OR40.setMVP(Number(mn.value||1),Number(mk.value||0))">MVP反映</button>
-    </div>
-    <div class="hint">MVPアイコンは固定：<b>./result/mostelim.png</b></div>
+    <label style="display:block;margin-top:8px;">撃破数</label>
+    <input id="mvpKillInput" type="number" value="0">
+    <button class="btn primary" style="margin-top:8px;" onclick="applyMvp()">反映</button>
   </div>
-
 </div>
 
 <script>
-  function pad3(n){ return String(n).padStart(3,'0'); }
-  const grid = document.getElementById('grid40');
-  for(let i=1;i<=40;i++){
-    const b = document.createElement('button');
-    b.className='btn';
-    b.textContent='N'+pad3(i);
-    b.onclick=()=>opener.__OR40.assignNumber(i);
-    grid.appendChild(b);
-  }
-  document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') window.close(); });
-</script>
-</body></html>`;
+  const BASE='./name';
+  const imgEls={1:img1,2:img2,3:img3};
+  const scoreEls={1:score1,2:score2,3:score3};
+  let assignIndex=0;
+
+  function pad(n){return String(n).padStart(3,'0')}
+
+  function setName(r,n){
+    imgEls[r].src = encodeURI(`${BASE}/N${pad(n)}.png`);
+    imgEls[r].style.opacity = 1;
   }
 
-  // 初期：全オフ（要求通り）
+  function applyPoints(r){
+    const rp=+document.getElementById(`p${r}r`).value||0;
+    const kp=+document.getElementById(`p${r}k`).value||0;
+    scoreEls[r].innerHTML=`総合 ${rp+kp}pt（順位 ${rp}pt、撃破 ${kp}pt）`;
+  }
+
+  function allOff(){
+    [1,2,3].forEach(r=>{
+      imgEls[r].classList.add('hidden');
+      scoreEls[r].classList.add('hidden');
+    });
+  }
+  function togglePt(){ [1,2,3].forEach(r=>scoreEls[r].classList.remove('hidden')) }
+  function toggleName(){ [1,2,3].forEach(r=>imgEls[r].classList.remove('hidden')) }
+  function toggleBoth(){ [1,2,3].forEach(r=>{imgEls[r].classList.remove('hidden');scoreEls[r].classList.remove('hidden')}) }
+
+  function mvpOn(){ mvp.classList.remove('hidden') }
+  function mvpOff(){ mvp.classList.add('hidden') }
+  function applyMvp(){ mvpKills.textContent=`最多撃破 ${document.getElementById('mvpKillInput').value||0}` }
+
+  const grid=document.getElementById('grid40');
+  for(let i=1;i<=40;i++){
+    const b=document.createElement('button');
+    b.className='btn';
+    b.textContent=`N${pad(i)}`;
+    b.onclick=()=>{
+      const r=[1,2,3][Math.min(assignIndex,2)];
+      setName(r,i);
+      imgEls[r].classList.remove('hidden');
+      assignIndex=Math.min(assignIndex+1,2);
+    };
+    grid.appendChild(b);
+  }
+
+  // 初期：全OFF
   allOff();
 </script>
 </body>
