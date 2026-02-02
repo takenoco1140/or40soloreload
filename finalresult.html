@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Final Results Overlay</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+      user-select: none;
+    }
+
+    /* === 台紙全体 === */
+    .board {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      background: url("file:///D:/OR40_haishin/result/%E7%B7%8F%E5%90%88%E7%B5%90%E6%9E%9C%E5%8F%B0%E7%B4%99.jpg") center / contain no-repeat;
+      background-color: #000;
+      font-family: "Segoe UI", "Noto Sans JP", system-ui, -apple-system, sans-serif;
+      color: #fff;
+    }
+
+    /* === 共通テキスト === */
+    .text {
+      position: absolute;
+      text-align: center;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    }
+
+    /* 表示ON/OFF */
+    .is-hidden { display: none !important; }
+
+    /* === 順位ブロック === */
+    .rank {
+      width: 520px;              /* 名前画像が長くても収める */
+      pointer-events: none;      /* 表示側はクリックを拾わない */
+    }
+
+    .rank .place {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    /* PlayerName = 画像（N001.png〜N040.png） */
+    .rank .nameimg {
+      display: block;
+      margin: 0 auto;
+      width: auto;              /* 横は自動 */
+      height: 60px;             /* ★高さ固定（ユーザー確定値） */
+      max-width: 520px;         /* はみ出し防止 */
+      object-fit: contain;
+      filter: drop-shadow(0 3px 10px rgba(0,0,0,0.75));
+      opacity: 0;
+    }
+
+    .rank .scoreline {
+      margin-top: 10px;
+      font-size: 30px;
+      font-weight: 700;
+      opacity: 0.95;
+      white-space: nowrap;
+    }
+
+    .rank .scoreline .sub {
+      font-weight: 600;
+      opacity: 0.92;
+    }
+
+    /* === 配置（確定） === */
+    .rank.first {
+      top: 580px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .rank.second {
+      top: 660px;
+      left: 120px;
+    }
+
+    .rank.third {
+      top: 660px;
+      right: 120px;
+    }
+
+    /* === 色分け === */
+    .first .place { color: #ffd966; }
+    .second .place { color: #9fe8d5; }
+    .third .place { color: #ffb07c; }
+
+    /* ===== ポップアップ（操作パネル） ===== */
+    .modal {
+      position: absolute;
+      inset: 0;
+      display: none;
+      pointer-events: auto;
+    }
+    .modal.show { display: block; }
+
+    .modal .backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+    }
+
+    .modal .dialog {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(1600px, calc(100% - 80px));
+      border-radius: 16px;
+      background: rgba(0,0,0,0.72);
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+      padding: 14px 16px 16px;
+    }
+
+    .modal-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .modal-title{
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      opacity: 0.95;
+    }
+
+    .closebtn{
+      appearance:none;
+      border:0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      background: rgba(255,255,255,0.12);
+      color:#fff;
+    }
+    .closebtn:hover{ background: rgba(255,255,255,0.18); }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .panel h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      font-weight: 800;
+      opacity: 0.95;
+      letter-spacing: 0.02em;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      transition: transform .06s ease, background .15s ease;
+    }
+    .btn:hover { background: rgba(255,255,255,0.18); }
+    .btn:active { transform: translateY(1px); }
+
+    .btn.primary { background: rgba(255,255,255,0.20); }
+    .btn.danger { background: rgba(255,90,90,0.28); }
+    .btn.small { padding: 6px 8px; font-size: 12px; border-radius: 9px; }
+
+    .btn.toggle.on { background: rgba(120, 255, 190, 0.22); }
+    .btn.toggle.off { background: rgba(255, 120, 120, 0.22); }
+
+    .hint {
+      font-size: 12px;
+      opacity: 0.75;
+      margin-top: 10px;
+      line-height: 1.3;
+    }
+
+    .grid40 {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .grid40 .btn {
+      padding: 7px 0;
+      font-size: 12px;
+      border-radius: 9px;
+    }
+
+    .field {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .field label {
+      font-size: 12px;
+      opacity: 0.85;
+      white-space: nowrap;
+    }
+
+    input[type="number"], input[type="text"]{
+      width: 100%;
+      padding: 7px 8px;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(0,0,0,0.28);
+      color: #fff;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .mini {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 6px;
+    }
+
+    /* 画面右上：操作パネル開く */
+    .open-controls {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      pointer-events: auto;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <div class="board" id="board">
+
+    <!-- 操作パネルOPEN（Cでも開閉） -->
+    <button class="btn small open-controls" id="openControlsBtn">操作 (C)</button>
+
+    <!-- 1位 -->
+    <div class="text rank first first" id="rank1">
+      <div class="place">1st</div>
+      <img class="nameimg" id="img1" alt="1st player" />
+      <div class="scoreline" id="score1">総合 0pt <span class="sub">（順位 0pt、撃破 0pt）</span></div>
+    </div>
+
+    <!-- 2位 -->
+    <div class="text rank second second" id="rank2">
+      <div class="place">2nd</div>
+      <img class="nameimg" id="img2" alt="2nd player" />
+      <div class="scoreline" id="score2">総合 0pt <span class="sub">（順位 0pt、撃破 0pt）</span></div>
+    </div>
+
+    <!-- 3位 -->
+    <div class="text rank third third" id="rank3">
+      <div class="place">3rd</div>
+      <img class="nameimg" id="img3" alt="3rd player" />
+      <div class="scoreline" id="score3">総合 0pt <span class="sub">（順位 0pt、撃破 0pt）</span></div>
+    </div>
+
+    <!-- ポップアップ（操作パネル） -->
+    <div class="modal" id="controlsModal" aria-hidden="true">
+      <div class="backdrop" id="modalBackdrop"></div>
+      <div class="dialog" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <div class="modal-title">操作パネル（Cで開閉 / Escで閉じる）</div>
+          <button class="closebtn" id="closeControlsBtn">閉じる</button>
+        </div>
+
+        <div class="controls-grid">
+          <!-- 表示ON/OFF -->
+          <div class="panel">
+            <h3>表示ON/OFF</h3>
+            <div class="row">
+              <button class="btn toggle on" data-toggle-rank="1" id="toggle1">1位：ON</button>
+              <button class="btn toggle on" data-toggle-rank="2" id="toggle2">2位：ON</button>
+              <button class="btn toggle on" data-toggle-rank="3" id="toggle3">3位：ON</button>
+            </div>
+            <div class="row" style="margin-top:10px;">
+              <button class="btn primary" id="showAll">全部ON</button>
+              <button class="btn danger" id="hideAll">全部OFF</button>
+            </div>
+            <div class="hint">※OFFにすると、その順位の「順位/名前/ポイント」全部が消える。</div>
+          </div>
+
+          <!-- 名前画像選択 -->
+          <div class="panel">
+            <h3>PlayerName画像（押した順に 1位→2位→3位）</h3>
+            <div class="row">
+              <button class="btn primary" id="resetAssign">割り当てリセット</button>
+              <button class="btn danger" id="clearAll">全クリア</button>
+            </div>
+
+            <div class="mini">画像フォルダ（固定：D:\OR40_haishin\name）</div>
+            <div class="row" style="margin-top:6px;">
+              <input type="text" id="basePath" value="file:///D:/OR40_haishin/name" aria-label="base path" />
+              <button class="btn small" id="applyBase">適用</button>
+            </div>
+
+            <div class="hint">ファイル名は <b>N001.png</b>〜<b>N040.png</b>（3桁ゼロ埋め）。</div>
+
+            <div style="height:10px"></div>
+            <div class="grid40" id="grid40"></div>
+          </div>
+
+          <!-- ポイント -->
+          <div class="panel">
+            <h3>ポイント</h3>
+
+            <div class="field">
+              <label>1位 順位</label><input type="number" id="p1_rank" min="0" value="0" />
+              <label>1位 撃破</label><input type="number" id="p1_elim" min="0" value="0" />
+              <label>2位 順位</label><input type="number" id="p2_rank" min="0" value="0" />
+              <label>2位 撃破</label><input type="number" id="p2_elim" min="0" value="0" />
+              <label>3位 順位</label><input type="number" id="p3_rank" min="0" value="0" />
+              <label>3位 撃破</label><input type="number" id="p3_elim" min="0" value="0" />
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+              <button class="btn primary" data-apply-points="1">1位反映</button>
+              <button class="btn primary" data-apply-points="2">2位反映</button>
+              <button class="btn primary" data-apply-points="3">3位反映</button>
+              <button class="btn primary" id="applyAllPoints">全部反映</button>
+            </div>
+
+            <div class="hint">表示：総合 pt（順位 pt、撃破 pt）</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ===== 設定 =====
+    // 既定：D:\OR40_haishin\name
+    let BASE_PATH = "file:///D:/OR40_haishin/name";
+
+    // 押した順に 1→2→3 へ割り当て。4回目以降は3位を上書き。
+    const RANK_ORDER = [1, 2, 3];
+    let assignIndex = 0;
+
+    const rankEls = {
+      1: document.getElementById("rank1"),
+      2: document.getElementById("rank2"),
+      3: document.getElementById("rank3")
+    };
+
+    const imgEls = {
+      1: document.getElementById("img1"),
+      2: document.getElementById("img2"),
+      3: document.getElementById("img3")
+    };
+
+    const scoreEls = {
+      1: document.getElementById("score1"),
+      2: document.getElementById("score2"),
+      3: document.getElementById("score3")
+    };
+
+    const toggles = {
+      1: document.getElementById("toggle1"),
+      2: document.getElementById("toggle2"),
+      3: document.getElementById("toggle3")
+    };
+
+    function pad3(n) {
+      return String(n).padStart(3, "0");
+    }
+
+    function buildSrc(n) {
+      const sep = BASE_PATH.endsWith("/") ? "" : "/";
+      return `${BASE_PATH}${sep}N${pad3(n)}.png`;
+    }
+
+    function setNameImage(targetRank, n) {
+      const src = buildSrc(n);
+      const el = imgEls[targetRank];
+      el.onload = () => { el.style.opacity = "1"; };
+      el.onerror = () => { el.style.opacity = "0.25"; };
+      el.src = src;
+      el.alt = `Rank ${targetRank} - N${pad3(n)}`;
+    }
+
+    function assignNumber(n) {
+      const targetRank = RANK_ORDER[Math.min(assignIndex, RANK_ORDER.length - 1)];
+      setNameImage(targetRank, n);
+      if (assignIndex < RANK_ORDER.length - 1) assignIndex++;
+    }
+
+    function resetAssign() {
+      assignIndex = 0;
+    }
+
+    function setPoints(rank, rankPt, elimPt) {
+      const total = (Number(rankPt) || 0) + (Number(elimPt) || 0);
+      scoreEls[rank].innerHTML = `総合 ${total}pt <span class="sub">（順位 ${Number(rankPt)||0}pt、撃破 ${Number(elimPt)||0}pt）</span>`;
+    }
+
+    function applyPoints(rank) {
+      if (rank === 1) setPoints(1, document.getElementById("p1_rank").value, document.getElementById("p1_elim").value);
+      if (rank === 2) setPoints(2, document.getElementById("p2_rank").value, document.getElementById("p2_elim").value);
+      if (rank === 3) setPoints(3, document.getElementById("p3_rank").value, document.getElementById("p3_elim").value);
+    }
+
+    function clearAll() {
+      resetAssign();
+      for (const r of [1,2,3]) {
+        imgEls[r].src = "";
+        imgEls[r].style.opacity = "0";
+        setPoints(r, 0, 0);
+      }
+      ["p1_rank","p1_elim","p2_rank","p2_elim","p3_rank","p3_elim"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = 0;
+      });
+    }
+
+    // ===== 表示ON/OFF =====
+    function setRankVisible(rank, visible) {
+      const el = rankEls[rank];
+      const btn = toggles[rank];
+      if (!el || !btn) return;
+
+      el.classList.toggle("is-hidden", !visible);
+      if (visible) {
+        btn.classList.remove("off");
+        btn.classList.add("on");
+        btn.textContent = `${rank}位：ON`;
+      } else {
+        btn.classList.remove("on");
+        btn.classList.add("off");
+        btn.textContent = `${rank}位：OFF`;
+      }
+    }
+
+    function toggleRank(rank) {
+      const isHidden = rankEls[rank].classList.contains("is-hidden");
+      setRankVisible(rank, isHidden);
+    }
+
+    // ===== UI生成（1〜40ボタン） =====
+    const grid = document.getElementById("grid40");
+    for (let i = 1; i <= 40; i++) {
+      const b = document.createElement("button");
+      b.className = "btn";
+      b.textContent = `N${pad3(i)}`;
+      b.addEventListener("click", () => assignNumber(i));
+      grid.appendChild(b);
+    }
+
+    // ===== ポップアップ制御 =====
+    const modal = document.getElementById("controlsModal");
+    const backdrop = document.getElementById("modalBackdrop");
+    const openBtn = document.getElementById("openControlsBtn");
+    const closeBtn = document.getElementById("closeControlsBtn");
+
+    function openModal() {
+      modal.classList.add("show");
+      modal.setAttribute("aria-hidden", "false");
+    }
+    function closeModal() {
+      modal.classList.remove("show");
+      modal.setAttribute("aria-hidden", "true");
+    }
+    function toggleModal() {
+      modal.classList.contains("show") ? closeModal() : openModal();
+    }
+
+    openBtn.addEventListener("click", toggleModal);
+    closeBtn.addEventListener("click", closeModal);
+    backdrop.addEventListener("click", closeModal);
+
+    // ===== UIイベント =====
+    document.getElementById("resetAssign").addEventListener("click", resetAssign);
+    document.getElementById("clearAll").addEventListener("click", clearAll);
+
+    document.getElementById("applyBase").addEventListener("click", () => {
+      const v = document.getElementById("basePath").value.trim();
+      if (v) BASE_PATH = v;
+    });
+
+    document.querySelectorAll("[data-apply-points]").forEach(btn => {
+      btn.addEventListener("click", () => applyPoints(Number(btn.getAttribute("data-apply-points"))));
+    });
+    document.getElementById("applyAllPoints").addEventListener("click", () => {
+      applyPoints(1); applyPoints(2); applyPoints(3);
+    });
+
+    // 表示ON/OFFボタン
+    document.querySelectorAll("[data-toggle-rank]").forEach(btn => {
+      btn.addEventListener("click", () => toggleRank(Number(btn.getAttribute("data-toggle-rank"))));
+    });
+    document.getElementById("showAll").addEventListener("click", () => {
+      setRankVisible(1,true); setRankVisible(2,true); setRankVisible(3,true);
+    });
+    document.getElementById("hideAll").addEventListener("click", () => {
+      setRankVisible(1,false); setRankVisible(2,false); setRankVisible(3,false);
+    });
+
+    // キー操作：Cで操作パネル開閉、Escで閉じる
+    document.addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "c") toggleModal();
+      if (e.key === "Escape") closeModal();
+    });
+
+    // 初期状態：表示ON、値は0、画像は透明
+    clearAll();
+    setRankVisible(1, true);
+    setRankVisible(2, true);
+    setRankVisible(3, true);
+    closeModal();
+  </script>
+</body>
+</html>
