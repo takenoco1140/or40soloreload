@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>OR40 RESULT</title>
+
+<style>
+:root{
+  --view-w: 1920;
+  --view-h: 1080;
+  --ui-w: 160;
+
+  --cover-left: 120px;
+  --cover-right: 1760px;
+
+  --blue:  #3aa0ff;   /* 試合 */
+  --pink:  #ff4fa3;   /* ジャンプ */
+  --lime:  #3dff7a;   /* 帯操作 */
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  background:#000;
+  overflow:hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.wrap{
+  position:absolute;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.canvas{
+  width: calc((var(--view-w) + (var(--ui-w) * 2)) * 1px);
+  height: calc(var(--view-h) * 1px);
+  position: relative;
+}
+
+/* UI共通 */
+.side{
+  position:absolute;
+  top:0;
+  width: calc(var(--ui-w) * 1px);
+  height: calc(var(--view-h) * 1px);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:10px;
+  z-index:10;
+}
+.side.left{ left:0; }
+.side.right{ right:0; }
+
+.side button{
+  width: calc(var(--ui-w) * 1px);
+  padding:10px 0;
+  font-weight:800;
+  cursor:pointer;
+  border:2px solid transparent;
+  background:#222;
+  color:#fff;
+  transition: border-color .12s, background .12s;
+}
+
+/* 左：選択状態 */
+.side.left button.match.active{
+  border-color: var(--blue);
+  background: rgba(58,160,255,0.25);
+}
+.side.left button.jump.active{
+  border-color: var(--pink);
+  background: rgba(255,79,163,0.25);
+}
+
+/* 右：帯操作 */
+.side.right button.band.active{
+  border-color: var(--lime);
+  background: rgba(61,255,122,0.18);
+}
+
+.sep{ height:10px; }
+
+/* 表示窓 */
+.viewport{
+  position:absolute;
+  left: calc(var(--ui-w) * 1px);
+  top:0;
+  width: calc(var(--view-w) * 1px);
+  height: calc(var(--view-h) * 1px);
+  overflow:hidden;
+  background:#000;
+}
+
+.board{
+  position:absolute;
+  top:0;
+  left:0;
+  transform:translateY(0);
+  transition:transform .15s linear;
+}
+.board img{
+  width: calc(var(--view-w) * 1px);
+  display:block;
+}
+
+/* 帯 */
+.cover{
+  position:absolute;
+  left: var(--cover-left);
+  right: calc((var(--view-w) * 1px) - var(--cover-right));
+  background: rgba(140,140,140,1);
+  opacity: 1;
+  pointer-events:auto;
+  transition: opacity .12s linear;
+}
+.cover.open{
+  opacity:0;
+  pointer-events:none;
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="canvas">
+
+    <!-- 左：試合 + ジャンプ -->
+    <div class="side left">
+
+      <!-- 試合選択（青） -->
+      <button class="match active" data-src="result/rank1.png">1試合目</button>
+      <button class="match" data-src="result/rank2.png">2試合目</button>
+      <button class="match" data-src="result/rank3.png">3試合目</button>
+      <button class="match" data-src="result/rank4.png">4試合目</button>
+      <button class="match" data-src="result/rankall.png">総合</button>
+
+      <div class="sep"></div>
+
+      <!-- 順位ジャンプ（ピンク） -->
+      <button class="jump" data-y="0">タイトル</button>
+      <button class="jump active" data-y="180">1-</button>
+      <button class="jump" data-y="1300">11-</button>
+      <button class="jump" data-y="2400">21-</button>
+      <button class="jump" data-y="3500">31-</button>
+    </div>
+
+    <!-- 中央表示 -->
+    <div class="viewport">
+      <div class="board" id="board">
+        <img id="rankImg" src="result/rank1.png" alt="順位表">
+
+        <!-- 1～10位 帯 -->
+        <div class="cover" style="top:408px;height:77px;"></div>
+        <div class="cover" style="top:491px;height:77px;"></div>
+        <div class="cover" style="top:575px;height:77px;"></div>
+        <div class="cover" style="top:658px;height:77px;"></div>
+        <div class="cover" style="top:741px;height:77px;"></div>
+        <div class="cover" style="top:825px;height:74px;"></div>
+        <div class="cover" style="top:908px;height:74px;"></div>
+        <div class="cover" style="top:992px;height:74px;"></div>
+        <div class="cover" style="top:1075px;height:74px;"></div>
+        <div class="cover" style="top:1158px;height:74px;"></div>
+      </div>
+    </div>
+
+    <!-- 右：帯 全オン/全オフ + めくり -->
+    <div class="side right">
+
+      <!-- 帯操作 -->
+      <button class="band active" id="bandAllOn">帯：全オン</button>
+      <button class="band" id="bandAllOff">帯：全オフ</button>
+
+      <div class="sep"></div>
+
+      <!-- めくり -->
+      <button data-open="0">1</button>
+      <button data-open="1">2</button>
+      <button data-open="2">3</button>
+      <button data-open-range="3,9">4-10</button>
+      <button data-open="3">4</button>
+      <button data-open="4">5</button>
+      <button data-open="5">6</button>
+      <button data-open="6">7</button>
+      <button data-open="7">8</button>
+      <button data-open="8">9</button>
+      <button data-open="9">10</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const board   = document.getElementById('board');
+const rankImg = document.getElementById('rankImg');
+const covers  = Array.from(document.querySelectorAll('.cover'));
+
+/* openState: true=開, false=閉 */
+const openState = new Array(covers.length).fill(false);
+
+function applyCovers(){
+  covers.forEach((c,i)=>c.classList.toggle('open', openState[i]));
+}
+
+/* 試合選択（青） */
+document.querySelectorAll('.match').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.match').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    rankImg.src = btn.dataset.src;
+    applyCovers();
+  };
+});
+
+/* 順位ジャンプ（ピンク） */
+document.querySelectorAll('.jump').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.jump').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    board.style.transform = `translateY(${-Number(btn.dataset.y)}px)`;
+  };
+});
+
+/* 帯：全オン／全オフ */
+const bandAllOn  = document.getElementById('bandAllOn');
+const bandAllOff = document.getElementById('bandAllOff');
+
+function setBandButtons(on){
+  bandAllOn.classList.toggle('active', on);
+  bandAllOff.classList.toggle('active', !on);
+}
+
+bandAllOn.onclick = ()=>{
+  openState.fill(false);
+  setBandButtons(true);
+  applyCovers();
+};
+
+bandAllOff.onclick = ()=>{
+  openState.fill(true);
+  setBandButtons(false);
+  applyCovers();
+};
+
+/* めくり */
+function syncBandButtons(){
+  const allClosed = openState.every(v=>v===false);
+  const allOpen   = openState.every(v=>v===true);
+  if(allClosed) setBandButtons(true);
+  else if(allOpen) setBandButtons(false);
+  else{
+    bandAllOn.classList.remove('active');
+    bandAllOff.classList.remove('active');
+  }
+}
+
+document.querySelectorAll('[data-open]').forEach(btn=>{
+  btn.onclick = ()=>{
+    const i = Number(btn.dataset.open);
+    if(openState[i] !== undefined){
+      openState[i] = true;
+      applyCovers();
+      syncBandButtons();
+    }
+  };
+});
+
+document.querySelectorAll('[data-open-range]').forEach(btn=>{
+  btn.onclick = ()=>{
+    const [a,b] = btn.dataset.openRange.split(',').map(Number);
+    for(let i=a;i<=b;i++){
+      if(openState[i] !== undefined) openState[i] = true;
+    }
+    applyCovers();
+    syncBandButtons();
+  };
+});
+
+/* ===== 初期状態：1- 固定 ===== */
+board.style.transform = 'translateY(-180px)';
+applyCovers();
+setBandButtons(true);
+</script>
+
+</body>
+</html>
