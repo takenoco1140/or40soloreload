@@ -3,223 +3,174 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>OR40 Single View (Split UI)</title>
+<title>OR40 Single View</title>
 
 <style>
-  :root{
-    /* ===== ネームプレート（ゲーム画面16:9基準） ===== */
-    --plateTop: 2%;
-    --plateLeft: 1%;
-    --plateWidth: 40%;
+:root{
+  --panelSize: 340px;
 
-    /* ===== UI（ボタン領域） ===== */
-    --panelSize: 340px;   /* 右側パネル幅（広い画面時） */
-    --panelSizeH: 240px;  /* 下側パネル高さ（狭い画面時） */
-    --gap: 10px;
-  }
+  --plateTop: 2%;
+  --plateLeft: 2%;
+  --plateWidth: 22%;
+}
 
-  html, body{
-    margin:0; padding:0;
-    width:100%; height:100%;
-    background:#000;
-    overflow:hidden;
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
+html, body{
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+  background:#000;
+  overflow:hidden;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
 
-  /* ===== 全体レイアウト：デフォは右パネル ===== */
-  #app{
-    width:100%;
-    height:100%;
-    display:grid;
-    grid-template-columns: 1fr var(--panelSize);
-    grid-template-rows: 1fr;
-    background:#000;
-  }
+/* ===== 全体：左＝映像 / 右＝操作 ===== */
+#app{
+  width:100%;
+  height:100%;
+  display:grid;
+  grid-template-columns: 1fr var(--panelSize);
+}
 
-  /* ===== 左：映像エリア ===== */
-  #stage{
-    position:relative;
-    width:100%;
-    height:100%;
-    background:#000;
-    overflow:hidden;
-  }
+/* ===== 映像側 ===== */
+#stage{
+  position:relative;
+  background:#000;
+  overflow:hidden;
+}
 
-  /* ゲーム領域 */
-  #gameArea{
-    position:absolute;
-    inset:0;
-    background:#000;
-    overflow:hidden;
-  }
+#gameArea{
+  position:absolute;
+  inset:0;
+}
 
-  /* 16:9 cover コンテナ（JSでサイズ決定） */
-  #game16x9{
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%);
-    background:#000;
-    overflow:hidden;
-  }
+#game16x9{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  background:#000;
+}
 
-  #game{
-    width:100%;
-    height:100%;
-    border:none;
-    display:block;
-  }
+#game{
+  width:100%;
+  height:100%;
+  border:none;
+  display:block;
+}
 
-  /* ネームプレート（ゲーム画面基準） */
-  #nameplate{
-    position:absolute;
-    top:var(--plateTop);
-    left:var(--plateLeft);
-    z-index:10;
-    pointer-events:none;
-  }
-  #nameplate img{
-    width:var(--plateWidth);
-    height:auto;
-    display:block;
-  }
+/* ネームプレート */
+#nameplate{
+  position:absolute;
+  top:var(--plateTop);
+  left:var(--plateLeft);
+  pointer-events:none;
+}
+#nameplate img{
+  width:var(--plateWidth);
+  height:auto;
+}
 
-  /* ===== 右/下：コントロールパネル ===== */
-  #panel{
-    height:100%;
-    background:#0b0b0b;
-    border-left:1px solid #222;
-    color:#eee;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-  }
+/* ===== 操作パネル ===== */
+#panel{
+  background:#0b0b0b;
+  border-left:1px solid #222;
+  color:#eee;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
 
-  #panelHeader{
-    padding:10px 10px 8px;
-    border-bottom:1px solid #222;
-    display:flex;
-    gap:10px;
-    align-items:center;
-    justify-content:space-between;
-  }
+#panelHeader{
+  padding:10px;
+  border-bottom:1px solid #222;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
 
-  #panelHeader .left{
-    display:flex;
-    gap:8px;
-    align-items:center;
-    min-width:0;
-  }
+#now{
+  font-weight:700;
+  font-size:14px;
+}
 
-  #now{
-    font-weight:700;
-    font-size:14px;
-    white-space:nowrap;
-  }
+button{
+  border:1px solid #2a2a2a;
+  background:#141414;
+  color:#eee;
+  border-radius:10px;
+  padding:8px 10px;
+  cursor:pointer;
+}
+button:hover{ background:#1b1b1b; }
 
-  #quick{
-    display:flex;
-    gap:6px;
-    align-items:center;
-  }
+input{
+  background:#0f0f0f;
+  color:#eee;
+  border:1px solid #2a2a2a;
+  border-radius:10px;
+  padding:8px;
+}
 
-  button{
-    appearance:none;
-    border:1px solid #2a2a2a;
-    background:#141414;
-    color:#eee;
-    border-radius:10px;
-    padding:8px 10px;
-    font-size:13px;
-    cursor:pointer;
-    user-select:none;
-  }
-  button:hover{ background:#1b1b1b; }
-  button:active{ transform: translateY(1px); }
+#tools{
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  border-bottom:1px solid #222;
+}
 
-  input[type="number"], input[type="text"]{
-    border:1px solid #2a2a2a;
-    background:#0f0f0f;
-    color:#eee;
-    border-radius:10px;
-    padding:8px 10px;
-    font-size:13px;
-    outline:none;
-  }
-  #num{ width:90px; }
+.row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
 
-  #tools{
-    padding:10px;
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-    border-bottom:1px solid #222;
-  }
+#gridWrap{
+  padding:10px;
+  overflow:auto;
+  height:100%;
+}
 
-  #tools .row{
-    display:flex;
-    gap:8px;
-    align-items:center;
-    flex-wrap:wrap;
-  }
+/* ★4列ボタン */
+#grid{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:8px;
+}
 
-  #filter{
-    flex:1;
-    min-width:120px;
-  }
-
-  #gridWrap{
-    padding:10px;
-    overflow:auto;
-    height:100%;
-  }
-
-  #grid{
-    display:grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap:8px;
-  }
-
-  .pbtn{
-    padding:10px 6px;
-    font-size:14px;
-    border-radius:12px;
-  }
-  .pbtn.active{
-    outline:2px solid rgba(255,255,255,.35);
-    background:#202020;
-  }
-
-  /* ===== 狭い画面：下パネルに切替 ===== */
-  @media (max-width: 1000px){
-    #app{
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr var(--panelSizeH);
-    }
-    #panel{
-      border-left:none;
-      border-top:1px solid #222;
-    }
-    #grid{
-      grid-template-columns: repeat(8, minmax(0, 1fr));
-    }
-  }
-  @media (max-width: 700px){
-    #grid{ grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  }
+.pbtn{
+  padding:10px 0;
+  border-radius:12px;
+}
+.pbtn.active{
+  outline:2px solid rgba(255,255,255,.35);
+  background:#202020;
+}
+.pbtn:disabled{
+  background:#0f0f0f;
+  color:#666;
+  border-color:#222;
+  cursor:not-allowed;
+}
+.pbtn.hidden{
+  visibility:hidden;
+  pointer-events:none;
+}
 </style>
 </head>
 
 <body>
 <div id="app">
-  <!-- 左：映像 -->
+
+  <!-- ===== 映像 ===== -->
   <div id="stage">
     <div id="gameArea">
       <div id="game16x9">
         <iframe id="game"
           allow="autoplay; fullscreen; camera; microphone"
-          allowfullscreen
-          scrolling="no"></iframe>
+          allowfullscreen></iframe>
 
         <div id="nameplate">
           <img id="nameImg" src="" alt="">
@@ -228,30 +179,24 @@
     </div>
   </div>
 
-  <!-- 右/下：操作 -->
+  <!-- ===== 操作 ===== -->
   <aside id="panel">
     <div id="panelHeader">
-      <div class="left">
-        <div id="now">P001</div>
-      </div>
-      <div id="quick">
-        <button id="prevBtn" title="前 (←)">◀</button>
-        <button id="nextBtn" title="次 (→)">▶</button>
+      <div id="now">P001</div>
+      <div>
+        <button id="prevBtn">◀</button>
+        <button id="nextBtn">▶</button>
       </div>
     </div>
 
     <div id="tools">
       <div class="row">
-        <input id="num" type="number" min="1" max="40" value="1" />
-        <button id="goBtn" title="移動 (Enter)">GO</button>
-        <button id="npBtn" title="ネームプレートON/OFF">NP</button>
+        <input id="num" type="number" min="1" max="40" />
+        <button id="goBtn">GO</button>
+        <button id="npBtn">NP</button>
       </div>
-      <div class="row">
-        <input id="filter" type="text" placeholder="絞り込み（例: 3 / 03 / P003）" />
-        <button id="clearBtn">クリア</button>
-      </div>
-      <div class="row" style="opacity:.8;font-size:12px;">
-        キー：Enter=GO / ←→=前後 / N=NP
+      <div class="row" style="font-size:12px;opacity:.7;">
+        有効番号：1～25 と 40
       </div>
     </div>
 
@@ -259,149 +204,107 @@
       <div id="grid"></div>
     </div>
   </aside>
+
 </div>
 
 <script>
-  const MAX_PLAYERS = 40;
+const MAX = 40;
 
-  function pad(n){ return String(n).padStart(3,"0"); }
+/* ★使う番号 */
+const ACTIVE_PLAYERS = [
+  ...Array.from({length:25},(_,i)=>i+1),
+  40
+];
+const UNUSED_MODE = "disable"; // or "hide"
 
-  function viewUrl(n){
-    return `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
-  }
+const ACTIVE_SET = new Set(ACTIVE_PLAYERS);
+const isActive = n => ACTIVE_SET.has(n);
 
-  function plateUrl(n){
-    return `overlays/P${pad(n)}.png`;
-  }
+const pad = n => String(n).padStart(3,"0");
+const viewUrl = n => `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
+const plateUrl = n => `overlays/P${pad(n)}.png`;
 
-  /* 16:9 cover 計算（表示エリア基準） */
-  function fitGame16x9Cover(){
-    const area = document.getElementById("gameArea");
-    const box  = document.getElementById("game16x9");
+let current = ACTIVE_PLAYERS[0];
+let nameplateOn = true;
 
-    const W = area.clientWidth;
-    const H = area.clientHeight;
+/* 16:9 fit */
+function fit(){
+  const a = gameArea;
+  const b = game16x9;
+  const W = a.clientWidth, H = a.clientHeight;
+  const r = W/H, t = 16/9;
+  if(r>=t){ b.style.height=H+"px"; b.style.width=(H*t)+"px"; }
+  else{ b.style.width=W+"px"; b.style.height=(W/t)+"px"; }
+}
+window.addEventListener("resize", fit);
 
-    const target = 16/9;
-    const ar = W / H;
+function setPlayer(n){
+  if(!isActive(n)) return;
+  current = n;
+  const t = Date.now();
+  game.src = "about:blank";
+  setTimeout(()=>game.src = viewUrl(n)+`&t=${t}`,30);
+  nameImg.src = plateUrl(n)+`?t=${t}`;
+  now.textContent = `P${pad(n)}`;
+  num.value = n;
+  updateButtons();
+}
 
-    let bw, bh;
-    if(ar >= target){
-      bh = H;
-      bw = Math.ceil(H * target);
-    }else{
-      bw = W;
-      bh = Math.ceil(W / target);
+function updateButtons(){
+  document.querySelectorAll(".pbtn").forEach(b=>{
+    const n = Number(b.dataset.n);
+    b.classList.toggle("active", n===current);
+  });
+}
+
+function buildGrid(){
+  grid.innerHTML="";
+  for(let i=1;i<=MAX;i++){
+    const b = document.createElement("button");
+    b.className="pbtn";
+    b.textContent=i;
+    b.dataset.n=i;
+
+    if(!isActive(i)){
+      b.disabled=true;
+      if(UNUSED_MODE==="hide") b.classList.add("hidden");
     }
 
-    box.style.width  = bw + "px";
-    box.style.height = bh + "px";
+    b.onclick=()=>setPlayer(i);
+    grid.appendChild(b);
   }
-  window.addEventListener("resize", fitGame16x9Cover);
+}
 
-  /* 状態 */
-  let current = 1;
-  let nameplateOn = true;
-
-  function setNameplateVisible(on){
-    nameplateOn = !!on;
-    document.getElementById("nameplate").style.display = nameplateOn ? "block" : "none";
+function nextActive(dir){
+  let n=current;
+  for(let i=0;i<MAX;i++){
+    n+=dir;
+    if(n<1) n=MAX;
+    if(n>MAX) n=1;
+    if(isActive(n)) return n;
   }
+  return current;
+}
 
-  function updateNow(){
-    document.getElementById("now").textContent = `P${pad(current)}`;
-    document.getElementById("num").value = current;
+/* controls */
+goBtn.onclick=()=>setPlayer(Number(num.value));
+prevBtn.onclick=()=>setPlayer(nextActive(-1));
+nextBtn.onclick=()=>setPlayer(nextActive(1));
+npBtn.onclick=()=>{
+  nameplateOn=!nameplateOn;
+  nameplate.style.display=nameplateOn?"block":"none";
+};
 
-    // ボタンのactive表示
-    document.querySelectorAll(".pbtn").forEach(btn=>{
-      btn.classList.toggle("active", Number(btn.dataset.n) === current);
-    });
-  }
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft") setPlayer(nextActive(-1));
+  if(e.key==="ArrowRight") setPlayer(nextActive(1));
+  if(e.key==="Enter") setPlayer(Number(num.value));
+});
 
-  function setPlayer(n){
-    n = Number(n);
-    if(!Number.isFinite(n) || n < 1 || n > MAX_PLAYERS) return;
-
-    current = n;
-    const t = Date.now();
-
-    const iframe = document.getElementById("game");
-    iframe.src = "about:blank"; // 切替安定化
-    setTimeout(() => {
-      iframe.src = viewUrl(n) + `&t=${t}`;
-    }, 30);
-
-    const img = document.getElementById("nameImg");
-    img.src = plateUrl(n) + `?t=${t}`;
-    img.alt = `P${pad(n)}`;
-
-    updateNow();
-  }
-
-  /* UI生成 */
-  const grid = document.getElementById("grid");
-  function buildGrid(){
-    const q = (document.getElementById("filter").value || "").trim().toLowerCase();
-    grid.innerHTML = "";
-
-    for(let i=1;i<=MAX_PLAYERS;i++){
-      const label = `p${pad(i)} ${i}`;
-      if(q && !label.includes(q)) continue;
-
-      const b = document.createElement("button");
-      b.className = "pbtn";
-      b.textContent = i;
-      b.dataset.n = String(i);
-      b.onclick = () => setPlayer(i);
-      grid.appendChild(b);
-    }
-
-    updateNow();
-  }
-
-  /* 操作 */
-  const clamp = (n)=> Math.min(MAX_PLAYERS, Math.max(1, Number(n)));
-
-  document.getElementById("goBtn").addEventListener("click", ()=>{
-    setPlayer(clamp(document.getElementById("num").value));
-  });
-
-  document.getElementById("prevBtn").addEventListener("click", ()=>{
-    setPlayer(clamp(current - 1));
-  });
-
-  document.getElementById("nextBtn").addEventListener("click", ()=>{
-    setPlayer(clamp(current + 1));
-  });
-
-  document.getElementById("npBtn").addEventListener("click", ()=>{
-    setNameplateVisible(!nameplateOn);
-  });
-
-  document.getElementById("filter").addEventListener("input", buildGrid);
-  document.getElementById("clearBtn").addEventListener("click", ()=>{
-    document.getElementById("filter").value = "";
-    buildGrid();
-    document.getElementById("filter").focus();
-  });
-
-  document.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter"){
-      setPlayer(clamp(document.getElementById("num").value));
-    }else if(e.key === "ArrowLeft"){
-      setPlayer(clamp(current - 1));
-    }else if(e.key === "ArrowRight"){
-      setPlayer(clamp(current + 1));
-    }else if(e.key && e.key.toLowerCase() === "n"){
-      setNameplateVisible(!nameplateOn);
-    }
-  });
-
-  /* 初期化 */
-  fitGame16x9Cover();
-  setNameplateVisible(true);
-  buildGrid();
-  setPlayer(1);
+/* init */
+buildGrid();
+fit();
+setPlayer(current);
 </script>
 </body>
 </html>
