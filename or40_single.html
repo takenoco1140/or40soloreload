@@ -6,10 +6,10 @@
 
 <style>
   :root{
-    /* === ネームプレート調整（1920x1080想定 初期値） === */
-    --plateScale: 0.5;
-    --plateTop: 20px;
-    --plateLeft: 220px;
+    /* === ネームプレート調整（16:9基準） === */
+    --plateTop: 2%;     /* ゲーム画面に対する位置 */
+    --plateLeft: 2%;
+    --plateWidth: 22%; /* ゲーム画面横幅に対する割合 */
   }
 
   html, body{
@@ -38,7 +38,7 @@
     overflow:hidden;
   }
 
-  /* ===== 16:9 cover コンテナ（サイズはJSで決定） ===== */
+  /* ===== 16:9 cover コンテナ（JSでサイズ決定） ===== */
   #game16x9{
     position:absolute;
     top:50%;
@@ -55,7 +55,7 @@
     display:block;
   }
 
-  /* ===== ネームプレート（左上に重ねる） ===== */
+  /* ===== ネームプレート（★ゲーム画面基準） ===== */
   #nameplate{
     position:absolute;
     top:var(--plateTop);
@@ -65,9 +65,9 @@
   }
 
   #nameplate img{
+    width:var(--plateWidth);
+    height:auto;
     display:block;
-    transform:scale(var(--plateScale));
-    transform-origin:top left;
   }
 </style>
 </head>
@@ -75,20 +75,22 @@
 <body>
 <div id="frame">
 
-  <!-- ゲーム映像 -->
   <div id="gameArea">
     <div id="game16x9">
+
+      <!-- ゲーム映像 -->
       <iframe
         id="game"
         allow="autoplay; fullscreen; camera; microphone"
         allowfullscreen
         scrolling="no"></iframe>
-    </div>
-  </div>
 
-  <!-- ネームプレート -->
-  <div id="nameplate">
-    <img id="nameImg" src="" alt="">
+      <!-- ネームプレート（16:9内） -->
+      <div id="nameplate">
+        <img id="nameImg" src="" alt="">
+      </div>
+
+    </div>
   </div>
 
 </div>
@@ -106,7 +108,7 @@
     return `overlays/P${pad(n)}.png`;
   }
 
-  /* 16:9 cover 計算（画面基準） */
+  /* ===== 16:9 cover 計算 ===== */
   function fitGame16x9Cover(){
     const area = document.getElementById("gameArea");
     const box  = document.getElementById("game16x9");
@@ -131,51 +133,44 @@
   }
   window.addEventListener("resize", fitGame16x9Cover);
 
-  /* ★ポップアップから呼ばれる前提：グローバルに置く */
+  /* ===== プレイヤー切替 ===== */
   function setPlayer(n){
     n = Number(n);
     if(!Number.isFinite(n) || n < 1 || n > MAX_PLAYERS) return;
 
-    document.getElementById("game").src = viewUrl(n);
+    const t = Date.now();
+
+    const iframe = document.getElementById("game");
+    iframe.src = "about:blank"; // OBS/CEF対策
+    setTimeout(() => {
+      iframe.src = viewUrl(n) + `&t=${t}`;
+    }, 30);
+
     const img = document.getElementById("nameImg");
-    img.src = plateUrl(n);
+    img.src = plateUrl(n) + `?t=${t}`;
     img.alt = `P${pad(n)}`;
   }
   window.setPlayer = setPlayer;
 
-  /* 操作ポップアップを開く（Pキー） */
-  let controlWin = null;
+  /* ===== URLクエリ ?p= 取得 ===== */
+  function getPlayerFromQuery(){
+    const p = new URLSearchParams(location.search).get("p");
+    if(p == null) return null;
 
-  function openController(){
-    if(controlWin && !controlWin.closed){
-      controlWin.focus();
-      return;
-    }
-    controlWin = window.open(
-      "controller_popup.html",
-      "or40_controller",
-      "width=520,height=720,resizable=yes"
-    );
+    const n = Number(p);
+    if(Number.isFinite(n) && n >= 1 && n <= MAX_PLAYERS) return n;
+    return null;
   }
-
-  document.addEventListener("keydown",(e)=>{
-    if(e.key && e.key.toLowerCase() === "p"){
-      openController();
-    }
-  });
 
   /* 初期化 */
   fitGame16x9Cover();
-  setPlayer(1);
+
+  const qn = getPlayerFromQuery();
+  if(qn != null){
+    setPlayer(qn);
+  }else{
+    setPlayer(1);
+  }
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
