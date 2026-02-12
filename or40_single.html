@@ -1,40 +1,59 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>OR40 Single View</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>OR40 Single View (Split UI)</title>
 
 <style>
   :root{
-    /* === ネームプレート（16:9基準） === */
+    /* ===== ネームプレート（ゲーム画面16:9基準） ===== */
     --plateTop: 2%;
     --plateLeft: 1%;
     --plateWidth: 40%;
+
+    /* ===== UI（ボタン領域） ===== */
+    --panelSize: 340px;   /* 右側パネル幅（広い画面時） */
+    --panelSizeH: 240px;  /* 下側パネル高さ（狭い画面時） */
+    --gap: 10px;
   }
 
   html, body{
-    margin:0;
-    padding:0;
-    width:100%;
-    height:100%;
+    margin:0; padding:0;
+    width:100%; height:100%;
     background:#000;
     overflow:hidden;
-    font-family:sans-serif;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   }
 
-  #frame{
+  /* ===== 全体レイアウト：デフォは右パネル ===== */
+  #app{
+    width:100%;
+    height:100%;
+    display:grid;
+    grid-template-columns: 1fr var(--panelSize);
+    grid-template-rows: 1fr;
+    background:#000;
+  }
+
+  /* ===== 左：映像エリア ===== */
+  #stage{
     position:relative;
     width:100%;
     height:100%;
     background:#000;
-  }
-
-  #gameArea{
-    position:absolute;
-    inset:0;
     overflow:hidden;
   }
 
+  /* ゲーム領域 */
+  #gameArea{
+    position:absolute;
+    inset:0;
+    background:#000;
+    overflow:hidden;
+  }
+
+  /* 16:9 cover コンテナ（JSでサイズ決定） */
   #game16x9{
     position:absolute;
     top:50%;
@@ -59,40 +78,191 @@
     z-index:10;
     pointer-events:none;
   }
-
   #nameplate img{
     width:var(--plateWidth);
     height:auto;
     display:block;
   }
+
+  /* ===== 右/下：コントロールパネル ===== */
+  #panel{
+    height:100%;
+    background:#0b0b0b;
+    border-left:1px solid #222;
+    color:#eee;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  #panelHeader{
+    padding:10px 10px 8px;
+    border-bottom:1px solid #222;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  #panelHeader .left{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    min-width:0;
+  }
+
+  #now{
+    font-weight:700;
+    font-size:14px;
+    white-space:nowrap;
+  }
+
+  #quick{
+    display:flex;
+    gap:6px;
+    align-items:center;
+  }
+
+  button{
+    appearance:none;
+    border:1px solid #2a2a2a;
+    background:#141414;
+    color:#eee;
+    border-radius:10px;
+    padding:8px 10px;
+    font-size:13px;
+    cursor:pointer;
+    user-select:none;
+  }
+  button:hover{ background:#1b1b1b; }
+  button:active{ transform: translateY(1px); }
+
+  input[type="number"], input[type="text"]{
+    border:1px solid #2a2a2a;
+    background:#0f0f0f;
+    color:#eee;
+    border-radius:10px;
+    padding:8px 10px;
+    font-size:13px;
+    outline:none;
+  }
+  #num{ width:90px; }
+
+  #tools{
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    border-bottom:1px solid #222;
+  }
+
+  #tools .row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  #filter{
+    flex:1;
+    min-width:120px;
+  }
+
+  #gridWrap{
+    padding:10px;
+    overflow:auto;
+    height:100%;
+  }
+
+  #grid{
+    display:grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap:8px;
+  }
+
+  .pbtn{
+    padding:10px 6px;
+    font-size:14px;
+    border-radius:12px;
+  }
+  .pbtn.active{
+    outline:2px solid rgba(255,255,255,.35);
+    background:#202020;
+  }
+
+  /* ===== 狭い画面：下パネルに切替 ===== */
+  @media (max-width: 1000px){
+    #app{
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr var(--panelSizeH);
+    }
+    #panel{
+      border-left:none;
+      border-top:1px solid #222;
+    }
+    #grid{
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 700px){
+    #grid{ grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  }
 </style>
 </head>
 
 <body>
-<div id="frame">
-  <div id="gameArea">
-    <div id="game16x9">
+<div id="app">
+  <!-- 左：映像 -->
+  <div id="stage">
+    <div id="gameArea">
+      <div id="game16x9">
+        <iframe id="game"
+          allow="autoplay; fullscreen; camera; microphone"
+          allowfullscreen
+          scrolling="no"></iframe>
 
-      <iframe
-        id="game"
-        allow="autoplay; fullscreen; camera; microphone"
-        allowfullscreen
-        scrolling="no"></iframe>
-
-      <div id="nameplate">
-        <img id="nameImg" src="" alt="">
+        <div id="nameplate">
+          <img id="nameImg" src="" alt="">
+        </div>
       </div>
-
     </div>
   </div>
+
+  <!-- 右/下：操作 -->
+  <aside id="panel">
+    <div id="panelHeader">
+      <div class="left">
+        <div id="now">P001</div>
+      </div>
+      <div id="quick">
+        <button id="prevBtn" title="前 (←)">◀</button>
+        <button id="nextBtn" title="次 (→)">▶</button>
+      </div>
+    </div>
+
+    <div id="tools">
+      <div class="row">
+        <input id="num" type="number" min="1" max="40" value="1" />
+        <button id="goBtn" title="移動 (Enter)">GO</button>
+        <button id="npBtn" title="ネームプレートON/OFF">NP</button>
+      </div>
+      <div class="row">
+        <input id="filter" type="text" placeholder="絞り込み（例: 3 / 03 / P003）" />
+        <button id="clearBtn">クリア</button>
+      </div>
+      <div class="row" style="opacity:.8;font-size:12px;">
+        キー：Enter=GO / ←→=前後 / N=NP
+      </div>
+    </div>
+
+    <div id="gridWrap">
+      <div id="grid"></div>
+    </div>
+  </aside>
 </div>
 
 <script>
   const MAX_PLAYERS = 40;
-
-  // ★ localStorage key（controllerと一致させる）
-  const LS_KEY_PLAYER = "or40_player";
-  const LS_KEY_NP     = "or40_np"; // 1=表示 / 0=非表示（任意）
 
   function pad(n){ return String(n).padStart(3,"0"); }
 
@@ -104,6 +274,7 @@
     return `overlays/P${pad(n)}.png`;
   }
 
+  /* 16:9 cover 計算（表示エリア基準） */
   function fitGame16x9Cover(){
     const area = document.getElementById("gameArea");
     const box  = document.getElementById("game16x9");
@@ -128,14 +299,34 @@
   }
   window.addEventListener("resize", fitGame16x9Cover);
 
+  /* 状態 */
+  let current = 1;
+  let nameplateOn = true;
+
+  function setNameplateVisible(on){
+    nameplateOn = !!on;
+    document.getElementById("nameplate").style.display = nameplateOn ? "block" : "none";
+  }
+
+  function updateNow(){
+    document.getElementById("now").textContent = `P${pad(current)}`;
+    document.getElementById("num").value = current;
+
+    // ボタンのactive表示
+    document.querySelectorAll(".pbtn").forEach(btn=>{
+      btn.classList.toggle("active", Number(btn.dataset.n) === current);
+    });
+  }
+
   function setPlayer(n){
     n = Number(n);
     if(!Number.isFinite(n) || n < 1 || n > MAX_PLAYERS) return;
 
+    current = n;
     const t = Date.now();
 
     const iframe = document.getElementById("game");
-    iframe.src = "about:blank"; // OBS/CEF対策
+    iframe.src = "about:blank"; // 切替安定化
     setTimeout(() => {
       iframe.src = viewUrl(n) + `&t=${t}`;
     }, 30);
@@ -143,30 +334,74 @@
     const img = document.getElementById("nameImg");
     img.src = plateUrl(n) + `?t=${t}`;
     img.alt = `P${pad(n)}`;
+
+    updateNow();
   }
 
-  function setNameplateVisible(isVisible){
-    document.getElementById("nameplate").style.display = isVisible ? "block" : "none";
+  /* UI生成 */
+  const grid = document.getElementById("grid");
+  function buildGrid(){
+    const q = (document.getElementById("filter").value || "").trim().toLowerCase();
+    grid.innerHTML = "";
+
+    for(let i=1;i<=MAX_PLAYERS;i++){
+      const label = `p${pad(i)} ${i}`;
+      if(q && !label.includes(q)) continue;
+
+      const b = document.createElement("button");
+      b.className = "pbtn";
+      b.textContent = i;
+      b.dataset.n = String(i);
+      b.onclick = () => setPlayer(i);
+      grid.appendChild(b);
+    }
+
+    updateNow();
   }
 
-  function readPlayerFromLocalStorage(){
-    const raw = localStorage.getItem(LS_KEY_PLAYER);
-    const n = Number(raw);
-    if(Number.isFinite(n) && n >= 1 && n <= MAX_PLAYERS) return n;
-    return 1;
-  }
+  /* 操作 */
+  const clamp = (n)=> Math.min(MAX_PLAYERS, Math.max(1, Number(n)));
 
-  function readNpFromLocalStorage(){
-    const raw = localStorage.getItem(LS_KEY_NP);
-    // 未設定なら表示
-    if(raw === null) return true;
-    return raw !== "0";
-  }
+  document.getElementById("goBtn").addEventListener("click", ()=>{
+    setPlayer(clamp(document.getElementById("num").value));
+  });
+
+  document.getElementById("prevBtn").addEventListener("click", ()=>{
+    setPlayer(clamp(current - 1));
+  });
+
+  document.getElementById("nextBtn").addEventListener("click", ()=>{
+    setPlayer(clamp(current + 1));
+  });
+
+  document.getElementById("npBtn").addEventListener("click", ()=>{
+    setNameplateVisible(!nameplateOn);
+  });
+
+  document.getElementById("filter").addEventListener("input", buildGrid);
+  document.getElementById("clearBtn").addEventListener("click", ()=>{
+    document.getElementById("filter").value = "";
+    buildGrid();
+    document.getElementById("filter").focus();
+  });
+
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter"){
+      setPlayer(clamp(document.getElementById("num").value));
+    }else if(e.key === "ArrowLeft"){
+      setPlayer(clamp(current - 1));
+    }else if(e.key === "ArrowRight"){
+      setPlayer(clamp(current + 1));
+    }else if(e.key && e.key.toLowerCase() === "n"){
+      setNameplateVisible(!nameplateOn);
+    }
+  });
 
   /* 初期化 */
   fitGame16x9Cover();
-  setNameplateVisible(readNpFromLocalStorage());
-  setPlayer(readPlayerFromLocalStorage());
+  setNameplateVisible(true);
+  buildGrid();
+  setPlayer(1);
 </script>
 </body>
 </html>
