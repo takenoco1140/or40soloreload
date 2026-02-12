@@ -29,14 +29,12 @@
     background:#000;
   }
 
-  /* ===== ゲーム領域 ===== */
   #gameArea{
     position:absolute;
     inset:0;
     overflow:hidden;
   }
 
-  /* ===== 16:9 cover ===== */
   #game16x9{
     position:absolute;
     top:50%;
@@ -53,7 +51,7 @@
     display:block;
   }
 
-  /* ===== ネームプレート（ゲーム画面基準） ===== */
+  /* ネームプレート（ゲーム画面基準） */
   #nameplate{
     position:absolute;
     top:var(--plateTop);
@@ -92,6 +90,10 @@
 <script>
   const MAX_PLAYERS = 40;
 
+  // ★ localStorage key（controllerと一致させる）
+  const LS_KEY_PLAYER = "or40_player";
+  const LS_KEY_NP     = "or40_np"; // 1=表示 / 0=非表示（任意）
+
   function pad(n){ return String(n).padStart(3,"0"); }
 
   function viewUrl(n){
@@ -102,13 +104,13 @@
     return `overlays/P${pad(n)}.png`;
   }
 
-  /* ===== 16:9 cover 計算 ===== */
   function fitGame16x9Cover(){
     const area = document.getElementById("gameArea");
     const box  = document.getElementById("game16x9");
 
     const W = area.clientWidth;
     const H = area.clientHeight;
+
     const target = 16/9;
     const ar = W / H;
 
@@ -126,7 +128,6 @@
   }
   window.addEventListener("resize", fitGame16x9Cover);
 
-  /* ===== プレイヤー切替 ===== */
   function setPlayer(n){
     n = Number(n);
     if(!Number.isFinite(n) || n < 1 || n > MAX_PLAYERS) return;
@@ -134,7 +135,7 @@
     const t = Date.now();
 
     const iframe = document.getElementById("game");
-    iframe.src = "about:blank";
+    iframe.src = "about:blank"; // OBS/CEF対策
     setTimeout(() => {
       iframe.src = viewUrl(n) + `&t=${t}`;
     }, 30);
@@ -144,18 +145,28 @@
     img.alt = `P${pad(n)}`;
   }
 
-  /* ===== URL ?p= 取得 ===== */
-  function getPlayerFromQuery(){
-    const p = new URLSearchParams(location.search).get("p");
-    const n = Number(p);
-    if(Number.isFinite(n) && n>=1 && n<=MAX_PLAYERS) return n;
-    return null;
+  function setNameplateVisible(isVisible){
+    document.getElementById("nameplate").style.display = isVisible ? "block" : "none";
+  }
+
+  function readPlayerFromLocalStorage(){
+    const raw = localStorage.getItem(LS_KEY_PLAYER);
+    const n = Number(raw);
+    if(Number.isFinite(n) && n >= 1 && n <= MAX_PLAYERS) return n;
+    return 1;
+  }
+
+  function readNpFromLocalStorage(){
+    const raw = localStorage.getItem(LS_KEY_NP);
+    // 未設定なら表示
+    if(raw === null) return true;
+    return raw !== "0";
   }
 
   /* 初期化 */
   fitGame16x9Cover();
-  const q = getPlayerFromQuery();
-  setPlayer(q ?? 1);
+  setNameplateVisible(readNpFromLocalStorage());
+  setPlayer(readPlayerFromLocalStorage());
 </script>
 </body>
 </html>
