@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>OR40 Controller</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{
+    margin:12px;
+    font-family:system-ui, sans-serif;
+    background:#111;
+    color:#eee;
+  }
+  h2{ margin:0 0 10px; font-size:18px; }
+
+  .panel{
+    background:#181818;
+    border:1px solid #2a2a2a;
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:12px;
+  }
+
+  .row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  input{
+    background:#0f0f0f;
+    color:#eee;
+    border:1px solid #333;
+    border-radius:10px;
+    padding:10px;
+    font-size:16px;
+  }
+
+  button{
+    background:#2a2a2a;
+    color:#eee;
+    border:1px solid #3a3a3a;
+    border-radius:10px;
+    padding:10px 12px;
+    cursor:pointer;
+  }
+  button:hover{ background:#333; }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:8px;
+  }
+
+  .status{
+    font-size:13px;
+    opacity:.8;
+  }
+
+  code{
+    display:block;
+    background:#0f0f0f;
+    border:1px solid #333;
+    border-radius:8px;
+    padding:8px;
+    color:#9fd;
+    overflow:auto;
+  }
+</style>
+</head>
+
+<body>
+<h2>OR40 Controller</h2>
+
+<div class="panel">
+  <div class="row">
+    <input id="num" type="number" min="1" max="40" value="1">
+    <button onclick="go()">送信 (Enter)</button>
+    <button onclick="prev()">◀</button>
+    <button onclick="next()">▶</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <p class="status">OBSブラウザソースURL</p>
+  <code id="obsUrl"></code>
+</div>
+
+<div class="panel">
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+  const MAX = 40;
+  const BASE =
+    "https://takenoco1140.github.io/or40soloreload/or40_single.html";
+
+  const num = document.getElementById("num");
+  const status = document.getElementById("status");
+  const grid = document.getElementById("grid");
+  const obsUrl = document.getElementById("obsUrl");
+
+  const pad3 = n => String(n).padStart(3,"0");
+
+  function url(n){ return `${BASE}?p=${pad3(n)}`; }
+
+  function go(){
+    const n = clamp(num.value);
+    num.value = n;
+    window.open(url(n), "_blank", "noopener");
+    status.textContent = `送信: P${pad3(n)}`;
+  }
+
+  function clamp(n){
+    n = Number(n);
+    if(!Number.isFinite(n)) return 1;
+    return Math.min(MAX, Math.max(1, n));
+  }
+
+  function prev(){ goNum(clamp(num.value - 1)); }
+  function next(){ goNum(clamp(num.value + 1)); }
+
+  function goNum(n){
+    num.value = n;
+    go();
+  }
+
+  document.addEventListener("keydown", e=>{
+    if(e.key === "Enter") go();
+    if(e.key === "ArrowLeft") prev();
+    if(e.key === "ArrowRight") next();
+  });
+
+  function build(){
+    for(let i=1;i<=MAX;i++){
+      const b = document.createElement("button");
+      b.textContent = i;
+      b.onclick = ()=>goNum(i);
+      grid.appendChild(b);
+    }
+  }
+
+  obsUrl.textContent = url(1);
+  build();
+</script>
+</body>
+</html>
