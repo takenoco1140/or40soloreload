@@ -4,151 +4,421 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Final Results Overlay</title>
+
 <style>
-html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden}
-body{display:flex;justify-content:center;align-items:center;font-family:"Segoe UI","Noto Sans JP",system-ui,sans-serif}
-.board{position:relative;width:1920px;height:1080px;background:url("./result/総合結果台紙.jpg") center/contain no-repeat;background-color:#000;color:#fff}
-.text{position:absolute;text-align:center;text-shadow:0 2px 6px rgba(0,0,0,.8)}
+  html,body{
+    margin:0;padding:0;width:100%;height:100%;
+    background:#000;overflow:hidden;
+    font-family:"Segoe UI","Noto Sans JP",system-ui,sans-serif;
+    color:#fff;
+  }
+  .app{
+    display:flex;
+    width:100%;
+    height:100%;
+  }
 
-/* ★ズレ防止：displayではなく visibility を使う */
-.vhidden{visibility:hidden !important;}
-.ohidden{opacity:0 !important;}
+  /* =========================
+     左：表示（中身は 1536x864 固定）
+     左領域に合わせて自動スケール
+     ========================= */
+  .stage{
+    flex:1;
+    min-width:0;
+    height:100vh;
+    position:relative;
+    background:#000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
 
-.rank{width:520px}
-.rank .place{font-size:40px;font-weight:800;margin-bottom:6px}
-.rank .nameimg{
-  display:block;margin:0 auto;
-  height:96px;                /* 高さ固定 */
-  width:auto;max-width:520px;
-  object-fit:contain;
-  filter:drop-shadow(0 3px 10px rgba(0,0,0,.75));
-}
-.rank .scoreline{margin-top:10px;font-size:30px;font-weight:700;white-space:nowrap}
+  .scale-wrap{
+    width:1536px;
+    height:864px;
+    transform:scale(1);            /* JSで上書き */
+    transform-origin:center center;
+    position:relative;
+  }
 
-.first{top:580px;left:50%;transform:translateX(-50%)}
-.second{top:650px;left:320px}
-.third{top:650px;right:320px}
-.first .place{color:#ffd966}.second .place{color:#9fe8d5}.third .place{color:#ffb07c}
+  .board{
+    position:absolute;
+    inset:0;
+    background:url("result/総合結果台紙.jpg") center/contain no-repeat;
+    background-color:#000;
+    color:#fff;
+  }
 
-/* MVP */
-.mvp{position:absolute;top:380px;left:50%;transform:translateX(-50%);text-align:center}
-.mvp .row{display:flex;align-items:center;justify-content:center;gap:14px}
-.mvp img{height:90px;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(0,0,0,.75))}
-.mvp .kills{margin-top:6px;font-size:28px;font-weight:800}
+  .text{position:absolute;text-align:center;text-shadow:0 2px 6px rgba(0,0,0,.8)}
+  .vhidden{visibility:hidden!important}
+  .ohidden{opacity:0!important}
+
+  /* ===== 順位表示 ===== */
+  .rank{width:520px;pointer-events:none}
+  .rank .place{font-size:50px;font-weight:800;margin-bottom:6px;letter-spacing:.04em}
+  .rank .nameimg{
+    display:block;margin:0 auto;
+    height:50px;width:auto;max-width:520px;
+    object-fit:contain;
+    filter:drop-shadow(0 3px 10px rgba(0,0,0,.75));
+  }
+  .rank .scoreline{margin-top:10px;font-size:25px;font-weight:700;white-space:nowrap}
+
+  .first{top:430px;left:50%;transform:translateX(-50%)}
+  .second{top:500px;left:50px}
+  .third{top:500px;right:50px}
+  .first .place{color:#ffd966}
+  .second .place{color:#9fe8d5}
+  .third .place{color:#ffb07c}
+
+  /* ===== MVP ===== */
+  .mvp{
+    position:absolute;
+    top:720px; left:50%;
+    transform:translateX(-50%);
+    text-align:center;
+    pointer-events:none;
+  }
+  .mvp-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:nowrap;
+    gap:0px;
+  }
+  #mvpIcon{
+    height:150px;width:auto;
+    transform:translateY(-6px);
+    object-fit:contain;
+    filter:drop-shadow(0 3px 10px rgba(0,0,0,.75));
+  }
+  #mvpImg{
+    height:50px;width:auto;
+    max-width:900px;
+    margin-left:-25px;
+    transform:translateY(-2px);
+    object-fit:contain;
+    filter:drop-shadow(0 3px 10px rgba(0,0,0,.75));
+  }
+  #mvpKills{
+    font-size:25px;
+    font-weight:800;
+    margin-left:14px;
+    margin-top:-6px;
+    white-space:nowrap;
+  }
+
+  /* =========================
+     右：操作パネル（固定幅）
+     ========================= */
+  .panel{
+    flex:0 0 420px; /* 好みで 380〜520px */
+    background:#0f0f10;
+    border-left:1px solid rgba(255,255,255,.15);
+    padding:14px;
+    overflow:auto;
+  }
+  .card{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:14px;
+    padding:12px;
+    margin-bottom:12px;
+  }
+  .card h3{
+    margin:0 0 10px;
+    font-size:13px;
+    font-weight:900;
+    opacity:.95;
+  }
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .btn{
+    appearance:none;border:0;border-radius:12px;
+    padding:10px 12px;
+    font-size:13px;font-weight:900;
+    cursor:pointer;
+    background:rgba(255,255,255,.12);
+    color:#fff;
+  }
+  .btn.primary{background:rgba(255,255,255,.22)}
+  .btn.danger{background:rgba(255,90,90,.3)}
+  .btn.small{padding:8px 10px;font-size:12px;border-radius:10px}
+  .hint{font-size:11px;opacity:.75;line-height:1.35;margin-top:8px}
+
+  label{display:block;font-size:12px;opacity:.85;margin-top:8px}
+  input{
+    width:100%;
+    padding:8px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.12);
+    background:#000;
+    color:#fff;
+    font-weight:900;
+    box-sizing:border-box;
+  }
+
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (max-width:1200px){
+    .panel{flex:0 0 380px;}
+    .cols{grid-template-columns:1fr}
+  }
 </style>
 </head>
+
 <body>
-<div class="board">
-  <button id="openPanel" style="position:absolute;top:16px;right:16px;z-index:5">操作</button>
+<div class="app">
 
-  <div id="rank1" class="text rank first">
-    <div class="place">1st</div>
-    <img id="img1" class="nameimg ohidden">
-    <div id="score1" class="scoreline vhidden">総合 0pt（順位 0pt、撃破 0pt）</div>
-  </div>
-  <div id="rank2" class="text rank second">
-    <div class="place">2nd</div>
-    <img id="img2" class="nameimg ohidden">
-    <div id="score2" class="scoreline vhidden">総合 0pt（順位 0pt、撃破 0pt）</div>
-  </div>
-  <div id="rank3" class="text rank third">
-    <div class="place">3rd</div>
-    <img id="img3" class="nameimg ohidden">
-    <div id="score3" class="scoreline vhidden">総合 0pt（順位 0pt、撃破 0pt）</div>
-  </div>
+  <!-- 左：表示 -->
+  <div class="stage">
+    <div class="scale-wrap">
+      <div class="board">
 
-  <div id="mvp" class="mvp vhidden">
-    <div class="row">
-      <img src="./result/mostelim.png">
-      <img id="mvpImg" class="nameimg ohidden">
+        <div id="rank1" class="text rank first">
+          <div class="place">1st</div>
+          <img id="img1" class="nameimg ohidden vhidden" alt="1st name" />
+          <div id="score1" class="scoreline vhidden">総合 0pt（順位 0pt・撃破 0pt）</div>
+        </div>
+
+        <div id="rank2" class="text rank second">
+          <div class="place">2nd</div>
+          <img id="img2" class="nameimg ohidden vhidden" alt="2nd name" />
+          <div id="score2" class="scoreline vhidden">総合 0pt（順位 0pt・撃破 0pt）</div>
+        </div>
+
+        <div id="rank3" class="text rank third">
+          <div class="place">3rd</div>
+          <img id="img3" class="nameimg ohidden vhidden" alt="3rd name" />
+          <div id="score3" class="scoreline vhidden">総合 0pt（順位 0pt・撃破 0pt）</div>
+        </div>
+
+        <div id="mvp" class="mvp vhidden">
+          <div class="mvp-row">
+            <img id="mvpIcon" alt="most elim icon" />
+            <img id="mvpImg" class="nameimg ohidden" alt="mvp name" />
+            <div id="mvpKills">0撃破</div>
+          </div>
+        </div>
+
+      </div>
     </div>
-    <div id="mvpKills" class="kills">最多撃破 0</div>
+  </div>
+
+  <!-- 右：操作 -->
+  <div class="panel">
+
+    <div class="card">
+      <h3>表示</h3>
+      <div class="row">
+        <button class="btn primary" onclick="allOn()">全ON</button>
+        <button class="btn danger" onclick="allOff()">全OFF</button>
+      </div>
+      <div class="hint">※名前の「番号入力→反映」で表示されます（ボタン選択は廃止）</div>
+    </div>
+
+    <div class="card">
+      <h3>順位別（番号 / ポイント）</h3>
+      <div class="cols">
+
+        <div class="card" style="margin:0">
+          <h3>1位</h3>
+
+          <label>番号（1〜40）</label>
+          <input id="n1" type="number" min="1" max="40" value="1" />
+
+          <label>総合pt</label>
+          <input id="t1" type="number" min="0" value="0" />
+
+          <label>撃破pt</label>
+          <input id="k1" type="number" min="0" value="0" />
+
+          <div class="row" style="margin-top:10px">
+            <button class="btn primary small" onclick="applyRank(1)">反映</button>
+            <button class="btn small" onclick="nameOn(1)">名前</button>
+            <button class="btn small" onclick="ptOn(1)">Pt</button>
+            <button class="btn small" onclick="bothOn(1)">同時</button>
+            <button class="btn small" onclick="bothOff(1)">OFF</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin:0">
+          <h3>2位</h3>
+
+          <label>番号（1〜40）</label>
+          <input id="n2" type="number" min="1" max="40" value="1" />
+
+          <label>総合pt</label>
+          <input id="t2" type="number" min="0" value="0" />
+
+          <label>撃破pt</label>
+          <input id="k2" type="number" min="0" value="0" />
+
+          <div class="row" style="margin-top:10px">
+            <button class="btn primary small" onclick="applyRank(2)">反映</button>
+            <button class="btn small" onclick="nameOn(2)">名前</button>
+            <button class="btn small" onclick="ptOn(2)">Pt</button>
+            <button class="btn small" onclick="bothOn(2)">同時</button>
+            <button class="btn small" onclick="bothOff(2)">OFF</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin:0">
+          <h3>3位</h3>
+
+          <label>番号（1〜40）</label>
+          <input id="n3" type="number" min="1" max="40" value="1" />
+
+          <label>総合pt</label>
+          <input id="t3" type="number" min="0" value="0" />
+
+          <label>撃破pt</label>
+          <input id="k3" type="number" min="0" value="0" />
+
+          <div class="row" style="margin-top:10px">
+            <button class="btn primary small" onclick="applyRank(3)">反映</button>
+            <button class="btn small" onclick="nameOn(3)">名前</button>
+            <button class="btn small" onclick="ptOn(3)">Pt</button>
+            <button class="btn small" onclick="bothOn(3)">同時</button>
+            <button class="btn small" onclick="bothOff(3)">OFF</button>
+          </div>
+        </div>
+
+      </div>
+      <div class="hint">「反映」で：番号の名前画像＋ポイント表示を更新します（名前/pt は個別ON/OFF可）</div>
+    </div>
+
+    <div class="card">
+      <h3>MVP（最多撃破賞）</h3>
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn primary" onclick="mvpOn()">MVP ON</button>
+        <button class="btn danger" onclick="mvpOff()">MVP OFF</button>
+      </div>
+      <label>番号（1〜40）</label>
+      <input id="mn" type="number" min="1" max="40" value="1" />
+      <label>撃破</label>
+      <input id="mk" type="number" min="0" value="0" />
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" onclick="setMVP(mn.value,mk.value)">反映</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
-const BASE='./name';
-const imgEls={1:img1,2:img2,3:img3};
-const scoreEls={1:score1,2:score2,3:score3};
-let assignIndex=0;
-function pad(n){return String(n).padStart(3,'0')}
-function nameSrc(n){return `${BASE}/N${pad(n)}.png`}
+/* =========================
+   パス（相対）
+   ========================= */
+const BASE_PATH = "name";
+const BOARD_SRC = "result/総合結果台紙.jpg";
+const MVP_ICON_SRC = "result/mostelim.png";
 
-function setName(rank,n){
-  const el=imgEls[rank];
-  el.onload=()=>el.classList.remove('ohidden');
-  el.src=nameSrc(n);
-  el.classList.remove('vhidden');
+/* =========================
+   DOM
+   ========================= */
+const imgEls   = {1: img1, 2: img2, 3: img3};
+const scoreEls = {1: score1,2: score2,3: score3};
+
+function pad3(n){ return String(n).padStart(3, "0"); }
+function nameSrc(n){ return `${BASE_PATH}/N${pad3(n)}.png`; }
+
+function clampNum(n, min, max){
+  n = Number(n);
+  if(!Number.isFinite(n)) n = min;
+  n = Math.floor(n);
+  return Math.min(Math.max(n, min), max);
 }
-function setPoints(rank,rankPt,killPt){
-  rankPt=Number(rankPt)||0;killPt=Number(killPt)||0;
-  scoreEls[rank].innerHTML=`総合 ${rankPt+killPt}pt（順位 ${rankPt}pt、撃破 ${killPt}pt）`;
-  scoreEls[rank].classList.remove('vhidden');
+
+function setImg(el, src){
+  el.onload = () => el.classList.remove("ohidden");
+  el.onerror = () => el.classList.add("ohidden");
+  el.src = src;
 }
 
-function allOff(){[1,2,3].forEach(r=>{imgEls[r].classList.add('vhidden');scoreEls[r].classList.add('vhidden')})}
-function ptOn(){[1,2,3].forEach(r=>scoreEls[r].classList.remove('vhidden'))}
-function nameOn(){[1,2,3].forEach(r=>imgEls[r].classList.remove('vhidden'))}
-function bothOn(){ptOn();nameOn()}
+/* =========================
+   表示制御
+   ========================= */
+function nameOn(rank){ imgEls[rank].classList.remove("vhidden"); }
+function nameOff(rank){ imgEls[rank].classList.add("vhidden"); }
+function ptOn(rank){ scoreEls[rank].classList.remove("vhidden"); }
+function ptOff(rank){ scoreEls[rank].classList.add("vhidden"); }
+function bothOn(rank){ nameOn(rank); ptOn(rank); }
+function bothOff(rank){ nameOff(rank); ptOff(rank); }
 
-function mvpOn(){mvp.classList.remove('vhidden')}
-function mvpOff(){mvp.classList.add('vhidden')}
-function setMvp(n,k){mvpOn();mvpImg.onload=()=>mvpImg.classList.remove('ohidden');mvpImg.src=nameSrc(n);mvpKills.textContent=`最多撃破 ${Number(k)||0}`}
+function allOn(){ [1,2,3].forEach(bothOn); }
+function allOff(){ [1,2,3].forEach(bothOff); mvpOff(); }
 
-/* ===== 別窓ポップアップ（デザインは旧controls踏襲） ===== */
-let win;
-document.getElementById('openPanel').onclick=()=>{
-  if(win&&!win.closed){win.focus();return}
-  win=window.open('','panel','width=420,height=900');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>操作パネル</title>
-  <style>body{margin:0;padding:12px;background:#111;color:#fff;font-family:system-ui}
-  .panel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;margin-bottom:12px}
-  h3{margin:0 0 8px;font-size:13px}
-  .row{display:flex;gap:8px;flex-wrap:wrap}
-  .btn{border:0;border-radius:10px;padding:8px 10px;font-weight:900;background:rgba(255,255,255,.12);color:#fff}
-  .btn.primary{background:rgba(255,255,255,.22)}
-  .btn.danger{background:rgba(255,90,90,.3)}
-  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-  input{width:100%;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:#000;color:#fff;font-weight:800}
-  </style></head><body>
+function setName(rank, n){
+  n = clampNum(n, 1, 40);
+  setImg(imgEls[rank], nameSrc(n));
+  nameOn(rank);
+}
 
-  <div class=panel><h3>表示</h3>
-    <div class=row>
-      <button class='btn danger' onclick='opener.allOff()'>全OFF</button>
-      <button class='btn' onclick='opener.ptOn()'>pt</button>
-      <button class='btn' onclick='opener.nameOn()'>名前</button>
-      <button class='btn primary' onclick='opener.bothOn()'>同時</button>
-    </div>
-  </div>
+function setPointsFromTotalKill(rank, totalPt, killPt){
+  totalPt = Number(totalPt)||0;
+  killPt  = Number(killPt)||0;
+  const rankPt = Math.max(totalPt - killPt, 0);
+  scoreEls[rank].innerHTML = `総合 ${totalPt}pt（順位 ${rankPt}pt、撃破 ${killPt}pt）`;
+  ptOn(rank);
+}
 
-  <div class=panel><h3>名前画像</h3><div class=grid id=g></div></div>
+/* =========================
+   MVP
+   ========================= */
+mvpIcon.src = MVP_ICON_SRC;
+function mvpOn(){ mvp.classList.remove("vhidden"); }
+function mvpOff(){ mvp.classList.add("vhidden"); }
+function setMVP(n, kills){
+  mvpOn();
+  setImg(mvpImg, nameSrc(clampNum(n, 1, 40)));
+  mvpKills.textContent = `${Number(kills)||0}撃破`;
+}
 
-  <div class=panel><h3>ポイント</h3>
-    1位<input id=r1 value=0><input id=k1 value=0><button class='btn primary' onclick='opener.setPoints(1,r1.value,k1.value)'>反映</button><br><br>
-    2位<input id=r2 value=0><input id=k2 value=0><button class='btn primary' onclick='opener.setPoints(2,r2.value,k2.value)'>反映</button><br><br>
-    3位<input id=r3 value=0><input id=k3 value=0><button class='btn primary' onclick='opener.setPoints(3,r3.value,k3.value)'>反映</button>
-  </div>
+/* =========================
+   順位反映
+   ========================= */
+function applyRank(rank){
+  const n = document.getElementById('n'+rank).value;
+  const t = document.getElementById('t'+rank).value;
+  const k = document.getElementById('k'+rank).value;
 
-  <div class=panel><h3>MVP</h3>
-    <button class='btn primary' onclick='opener.mvpOn()'>ON</button>
-    <button class='btn danger' onclick='opener.mvpOff()'>OFF</button><br><br>
-    番号<input id=mn value=1> 撃破<input id=mk value=0>
-    <button class='btn primary' onclick='opener.setMvp(mn.value,mk.value)'>反映</button>
-  </div>
+  setName(rank, n);
+  setPointsFromTotalKill(rank, t, k);
+}
 
-  <script>
-    const g=document.getElementById('g');
-    for(let i=1;i<=40;i++){
-      const b=document.createElement('button');b.className='btn';b.textContent='N'+String(i).padStart(3,'0');
-      b.onclick=()=>{opener.setName([1,2,3][Math.min(opener.assignIndex||0,2)],i);opener.assignIndex=Math.min((opener.assignIndex||0)+1,2)};
-      g.appendChild(b);
-    }
-  <\/script>
-</body></html>`);
-};
+/* =========================
+   プリロード
+   ========================= */
+(function preload(){
+  for(let i=1;i<=40;i++){ new Image().src = nameSrc(i); }
+  new Image().src = MVP_ICON_SRC;
+})();
 
-/* 初期 */
-allOff();
+/* =========================
+   左を最大表示（自動スケール）
+   ========================= */
+function fitStage(){
+  const baseW = 1536;
+  const baseH = 864;
+
+  const stage = document.querySelector('.stage');
+  const wrap  = document.querySelector('.scale-wrap');
+
+  const w = stage.clientWidth;
+  const h = stage.clientHeight;
+
+  const sx = w / baseW;
+  const sy = h / baseH;
+  const s  = Math.min(sx, sy);
+
+  wrap.style.transform = `scale(${s})`;
+}
+addEventListener('resize', fitStage);
+fitStage();
+
+/* 初期：順位ON / MVP OFF */
+[1,2,3].forEach(bothOn);
+mvpOff();
 </script>
 </body>
 </html>
