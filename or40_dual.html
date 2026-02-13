@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OR40 Dual View (Right Muted)</title>
+<title>OR40 Dual 6-Split (8x5, Right Muted, Lock, Active Only)</title>
 
 <style>
 :root{
@@ -151,7 +151,7 @@ const ACTIVE_SET = new Set(ACTIVE_PLAYERS.filter(n => Number.isFinite(n) && n>=1
 
 const pad = n => String(n).padStart(3,"0");
 const viewUrlL = n => `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
-const viewUrlR = n => `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput&mute`;
+const viewUrlR = n => `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput&noaudio&volume=0`;
 const plateUrl = n => `overlays/P${pad(n)}.png`;
 
 let L = null; // 現在選択（有効番号）
