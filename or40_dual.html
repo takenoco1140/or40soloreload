@@ -1,136 +1,255 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>OR40 SOLOリロード 運営用モニター</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OR40 Dual View (Right Muted)</title>
+<title>OR40 Dual 6-Split (8x5, Right Muted, Lock, Active Only)</title>
+
 <style>
-  :root {
-    --bg:#0b0b0f;
-    --gap:10px;
-    --tileRadius:14px;
-    --tileBorder:1px solid rgba(255,255,255,.12);
-    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", "Yu Gothic", sans-serif;
+:root{
+--gap: 10px;
+--plateH: 80px;
+--controlH: 260px;
+--border: #222;
+}
 
-    --srcW:1920;
-    --srcH:1080;
+html,body{
+margin:0;
+padding:0;
+width:100%;
+height:100%;
+background:#000;
+overflow:hidden;
+font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
 
-    --cropLeft: 0;
-    --cropBottom: 0;
-    --cropW: 560;
-    --cropH: 320;
+#app{
+width:100%;
+height:100%;
+display:grid;
+grid-template-columns: 1fr 1fr;
+grid-template-rows: 1fr var(--plateH) var(--controlH);
+gap:var(--gap);
+padding:var(--gap);
+box-sizing:border-box;
+}
 
-    --cols:8;
-    --sideW: 420px;
-  }
+.cell{
+border:1px solid var(--border);
+border-radius:14px;
+overflow:hidden;
+background:#000;
+}
 
-  html,body {
-    height:100%;
-    margin:0;
-    background:var(--bg);
-    color:#fff;
-    font-family:var(--font);
-    overflow:hidden;
-  }
+/* video */
+.videoBox{ position:relative; background:#000; }
+.videoInner{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.ratio{ width:100%; height:100%; aspect-ratio:16/9; }
+.videoBox iframe{ width:100%; height:100%; border:none; }
 
-  .layout{
-    height:100vh;
-    display:grid;
-    grid-template-rows: auto 1fr;
-  }
+/* nameplate center */
+.plate{
+background:#0f0f0f;
+display:flex; align-items:center; justify-content:center;
+}
+.plate img{ max-height:60px; width:auto; }
 
-  .main{
-    height:100%;
-    display:grid;
-    grid-template-columns: 1fr var(--sideW);
-    gap: var(--gap);
-    padding: var(--gap);
-    box-sizing:border-box;
-    min-height:0;
-  }
+/* controls */
+.control{
+background:#0b0b0b;
+padding:10px;
+box-sizing:border-box;
+overflow:hidden;
+}
 
-  .top {
-    position:sticky; top:0; z-index:20;
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-    padding:10px 12px;
-    background:linear-gradient(to bottom, rgba(11,11,15,.95), rgba(11,11,15,.65));
-    backdrop-filter: blur(8px);
-    border-bottom:1px solid rgba(255,255,255,.10);
-  }
+/* 8×5 fixed grid */
+.grid{
+display:grid;
+grid-template-columns: repeat(8, 1fr);
+grid-template-rows: repeat(5, 1fr);
+gap:8px;
+height:100%;
+}
 
-  .pill {
-    padding:4px 10px;
-    border:1px solid rgba(255,255,255,.14);
-    border-radius:999px;
-    background: rgba(255,255,255,.06);
-    font-size:12px;
-    opacity:.9;
-  }
+.pbtn{
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:14px;
+border-radius:10px;
+border:1px solid #333;
+background:#1a1a1a;
+color:#eee;
+cursor:pointer;
+user-select:none;
+}
+.pbtn:hover{ background:#222; }
+.pbtn.active{
+outline:2px solid rgba(255,255,255,.35);
+background:#262626;
+}
 
-  .grid {
-    display:grid;
-    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-    gap: var(--gap);
-    height: 100%;
-  }
+/* disabled (unavailable / locked) */
+.pbtn:disabled{
+background:#0f0f0f;
+color:#666;
+border-color:#222;
+cursor:not-allowed;
+outline:none;
+}
 
-  .tile {
-    position:relative;
-    border-radius:14px;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.12);
-    background:#111;
-  }
-
-  iframe {
-    width:100%;
-    height:100%;
-    border:0;
-    background:#000;
-  }
+/* ★使わない番号を「箱ごと消す」場合はこれを使う（JSで付与） */
+.pbtn.hidden{
+visibility:hidden;   /* グリッドの穴は保持（8×5の形は崩さない） */
+pointer-events:none;
+}
 </style>
 </head>
 
 <body>
-<div class="layout">
-  <div class="top">
-    <b>OR40 SOLOリロード 運営用モニター</b>
-    <span class="pill">音声：noaudio / volume=0 強制</span>
-  </div>
+<div id="app">
+<!-- top: games -->
+<div class="cell videoBox">
+<div class="videoInner"><div class="ratio">
+<iframe id="gameL" allow="autoplay; fullscreen; camera; microphone" allowfullscreen></iframe>
+</div></div>
+</div>
+<div class="cell videoBox">
+<div class="videoInner"><div class="ratio">
+<iframe id="gameR" allow="autoplay; fullscreen; camera; microphone" allowfullscreen></iframe>
+</div></div>
+</div>
 
-  <div class="main">
-    <div class="grid" id="grid"></div>
-  </div>
+<!-- middle: nameplates -->
+<div class="cell plate"><img id="nameL" alt=""></div>
+<div class="cell plate"><img id="nameR" alt=""></div>
+
+<!-- bottom: controls -->
+<div class="cell control"><div class="grid" id="gridL"></div></div>
+<div class="cell control"><div class="grid" id="gridR"></div></div>
 </div>
 
 <script>
-const total = 40;
+/* =========================
+  ★ここだけ編集：使う番号
+  例1) 1～32だけ使う → Array.from({length:32},(_,i)=>i+1)
+  例2) 飛び番あり → [1,2,3,5,6,7,10,...]
+========================= */
+const ACTIVE_PLAYERS = [...Array.from({length:25},(_,i)=>i+1),40]; // ←必要に応じて変更
+// const ACTIVE_PLAYERS = Array.from({length:32},(_,i)=>i+1);
+// const ACTIVE_PLAYERS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,40]; // 例
 
-function buildTiles(){
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
+/* 使わない番号の見せ方：
+  - "disable": ボタンは残すが押せない（灰色）
+  - "hide":    8×5の形は維持しつつ、その枠は見えなくする（穴あき）
+*/
+const UNUSED_MODE = "disable"; // "disable" or "hide"
+/* ========================= */
 
-  for(let i=1;i<=total;i++){
-    const cid = String(i).padStart(3,'0');
+const MAX = 40;
+const ACTIVE_SET = new Set(ACTIVE_PLAYERS.filter(n => Number.isFinite(n) && n>=1 && n<=MAX));
 
-    const tile = document.createElement('div');
-    tile.className = 'tile';
+const pad = n => String(n).padStart(3,"0");
+const viewUrlL = n => `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput`;
+const viewUrlR = n => `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput&mute`;
+const viewUrlR = n => `https://vdo.ninja/?view=OR40_C${pad(n)}&cleanoutput&noaudio&volume=0`;
+const plateUrl = n => `overlays/P${pad(n)}.png`;
 
-    const iframe = document.createElement('iframe');
-    iframe.allow = 'autoplay; display-capture';
+let L = null; // 現在選択（有効番号）
+let R = null;
 
-    // ★音声完全無効指定
-    iframe.src =
-      `https://vdo.ninja/?view=OR40_C${cid}` +
-      `&cleanoutput&viewwidth=256&viewheight=144` +
-      `&noaudio&volume=0`;
+function isActive(n){ return ACTIVE_SET.has(n); }
 
-    tile.appendChild(iframe);
-    grid.appendChild(tile);
-  }
+function firstActive(fallback=1){
+for(let i=1;i<=MAX;i++) if(isActive(i)) return i;
+return fallback; // 何も有効がない場合の保険
 }
 
-buildTiles();
+function apply(side, n){
+n = Number(n);
+if(!Number.isFinite(n) || n < 1 || n > MAX) return;
+if(!isActive(n)) return;                 // ★使わない番号は拒否
+if(side === "L" && n === R) return;      // 同時使用防止
+if(side === "R" && n === L) return;
+
+const t = Date.now();
+
+if(side === "L"){
+L = n;
+gameL.src = "about:blank";
+setTimeout(()=>gameL.src = viewUrlL(n)+`&t=${t}`,30);
+nameL.src = plateUrl(n)+`?t=${t}`;
+nameL.alt = `P${pad(n)}`;
+}else{
+R = n;
+gameR.src = "about:blank";
+setTimeout(()=>gameR.src = viewUrlR(n)+`&t=${t}`,30);
+nameR.src = plateUrl(n)+`?t=${t}`;
+nameR.alt = `P${pad(n)}`;
+}
+updateButtons();
+}
+
+function updateButtons(){
+updateGrid(gridL, L, R);
+updateGrid(gridR, R, L);
+}
+
+function updateGrid(grid, activeN, otherN){
+grid.querySelectorAll(".pbtn").forEach(b=>{
+const n = Number(b.dataset.n);
+
+// active表示
+b.classList.toggle("active", n === activeN);
+
+// 使わない番号の扱い
+const available = isActive(n);
+if(!available){
+if(UNUSED_MODE === "hide"){
+b.classList.add("hidden");
+b.disabled = true;
+}else{
+b.classList.remove("hidden");
+b.disabled = true;
+}
+return;
+}else{
+b.classList.remove("hidden");
+}
+
+// 同時使用防止（相手が使っている番号を無効化）
+b.disabled = (n === otherN);
+});
+}
+
+function buildGrid(grid, side){
+for(let i=1;i<=MAX;i++){
+const b = document.createElement("button");
+b.className = "pbtn";
+b.type = "button";
+b.textContent = i;
+b.dataset.n = i;
+b.onclick = ()=>apply(side, i);
+grid.appendChild(b);
+}
+}
+
+/* 初期化 */
+buildGrid(gridL, "L");
+buildGrid(gridR, "R");
+
+// 初期値は「有効番号の先頭」を割り当てる（LとRが被らないように）
+const a1 = firstActive(1);
+let a2 = a1;
+for(let i=a1+1;i<=MAX;i++){ if(isActive(i)){ a2 = i; break; } }
+if(a2 === a1){
+// 有効番号が1つしかない場合の保険（同時使用防止は働く）
+a2 = a1;
+}
+
+apply("L", a1);
+apply("R", a2);
 </script>
 </body>
 </html>
